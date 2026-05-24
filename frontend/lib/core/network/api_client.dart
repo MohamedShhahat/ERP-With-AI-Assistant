@@ -26,10 +26,12 @@ final dioProvider = Provider<Dio>((ref) {
       if (error.response != null) {
         final statusCode = error.response!.statusCode ?? 500;
         final data = error.response!.data;
-        final message = data is Map ? (data['detail'] ?? 'Unknown error') : 'Server error';
+        final message =
+            data is Map ? (data['detail'] ?? 'Unknown error') : 'Server error';
         handler.reject(DioException(
           requestOptions: error.requestOptions,
-          error: ApiException(statusCode: statusCode, message: message.toString()),
+          error:
+              ApiException(statusCode: statusCode, message: message.toString()),
           type: DioExceptionType.badResponse,
           response: error.response,
         ));
