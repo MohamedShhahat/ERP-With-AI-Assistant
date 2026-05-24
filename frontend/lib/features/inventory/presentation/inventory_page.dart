@@ -28,8 +28,7 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
   void _closeDetail() => setState(() => _selectedItem = null);
 
   void _showAiDialog() {
-    showDialog(
-        context: context, builder: (ctx) => _InventoryAiDialog(ref: ref));
+    showDialog(context: context, builder: (ctx) => _InventoryAiDialog(ref: ref));
   }
 
   Future<void> _refreshStock() async {
@@ -37,20 +36,14 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
       final repo = ref.read(inventoryRepositoryProvider);
       await repo.refreshCache();
       ref.invalidate(inventoryDataProvider);
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Stock refreshed')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stock refreshed')));
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
   }
 
   void _showTransferDialog(InventoryItem item) {
-    showDialog(
-        context: context,
-        builder: (_) => _TransferDialog(ref: ref, item: item));
+    showDialog(context: context, builder: (_) => _TransferDialog(ref: ref, item: item));
   }
 
   void _showOpeningStockDialog() async {
@@ -89,14 +82,10 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                         decoration: InputDecoration(
                           hintText: 'Search product, SKU, or barcode...',
                           prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        onChanged: (v) => ref
-                            .read(inventorySearchProvider.notifier)
-                            .state = v,
+                        onChanged: (v) => ref.read(inventorySearchProvider.notifier).state = v,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -107,21 +96,14 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                         isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Warehouse',
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         items: [
-                          const DropdownMenuItem(
-                              value: null, child: Text('All')),
-                          ...warehouses.map((w) => DropdownMenuItem(
-                              value: w.warehouseId,
-                              child: Text(w.warehouseName))),
+                          const DropdownMenuItem(value: null, child: Text('All')),
+                          ...warehouses.map((w) => DropdownMenuItem(value: w.warehouseId, child: Text(w.warehouseName))),
                         ],
-                        onChanged: (v) => ref
-                            .read(selectedWarehouseProvider.notifier)
-                            .state = v,
+                        onChanged: (v) => ref.read(selectedWarehouseProvider.notifier).state = v,
                       ),
                     ),
                   ],
@@ -164,29 +146,13 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                 // KPI Row
                 Row(
                   children: [
-                    _KpiCard(
-                        icon: Icons.attach_money,
-                        label: '\$${_formatNumber(kpis['totalValue'])}',
-                        subtitle: 'Total Value',
-                        color: AppColors.primary),
+                    _KpiCard(icon: Icons.attach_money, label: '\$${_formatNumber(kpis['totalValue'])}', subtitle: 'Total Value', color: AppColors.primary),
                     const SizedBox(width: 12),
-                    _KpiCard(
-                        icon: Icons.check_circle,
-                        label: '${kpis['inStock']}',
-                        subtitle: 'In Stock',
-                        color: AppColors.success),
+                    _KpiCard(icon: Icons.check_circle, label: '${kpis['inStock']}', subtitle: 'In Stock', color: AppColors.success),
                     const SizedBox(width: 12),
-                    _KpiCard(
-                        icon: Icons.warning_amber,
-                        label: '${kpis['lowStock']}',
-                        subtitle: 'Low Stock',
-                        color: AppColors.warning),
+                    _KpiCard(icon: Icons.warning_amber, label: '${kpis['lowStock']}', subtitle: 'Low Stock', color: AppColors.warning),
                     const SizedBox(width: 12),
-                    _KpiCard(
-                        icon: Icons.error_outline,
-                        label: '${kpis['outOfStock']}',
-                        subtitle: 'Out of Stock',
-                        color: AppColors.error),
+                    _KpiCard(icon: Icons.error_outline, label: '${kpis['outOfStock']}', subtitle: 'Out of Stock', color: AppColors.error),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -195,18 +161,13 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [
-                      AppColors.primary.withOpacity(0.05),
-                      AppColors.info.withOpacity(0.03)
-                    ]),
+                    gradient: LinearGradient(colors: [AppColors.primary.withOpacity(0.05), AppColors.info.withOpacity(0.03)]),
                     borderRadius: BorderRadius.circular(10),
-                    border:
-                        Border.all(color: AppColors.primary.withOpacity(0.15)),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.15)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.smart_toy,
-                          color: AppColors.primary, size: 20),
+                      const Icon(Icons.smart_toy, color: AppColors.primary, size: 20),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -215,15 +176,13 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                               : kpis['lowStock'] > 0
                                   ? '${kpis['lowStock']} products running low on stock. Consider reordering soon.'
                                   : 'All inventory levels looking healthy!',
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w500),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                         ),
                       ),
                       TextButton.icon(
                         onPressed: _showAiDialog,
                         icon: const Icon(Icons.smart_toy, size: 16),
-                        label: const Text('Ask AI',
-                            style: TextStyle(fontSize: 12)),
+                        label: const Text('Ask AI', style: TextStyle(fontSize: 12)),
                       ),
                     ],
                   ),
@@ -235,44 +194,15 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _StatusChip(
-                          label: 'All',
-                          selected: statusFilter == null,
-                          onTap: () => ref
-                              .read(inventoryStatusFilterProvider.notifier)
-                              .state = null),
+                      _StatusChip(label: 'All', selected: statusFilter == null, onTap: () => ref.read(inventoryStatusFilterProvider.notifier).state = null),
                       const SizedBox(width: 8),
-                      _StatusChip(
-                          label: 'In Stock',
-                          selected: statusFilter == StockStatus.normal,
-                          color: AppColors.success,
-                          onTap: () => ref
-                              .read(inventoryStatusFilterProvider.notifier)
-                              .state = StockStatus.normal),
+                      _StatusChip(label: 'In Stock', selected: statusFilter == StockStatus.normal, color: AppColors.success, onTap: () => ref.read(inventoryStatusFilterProvider.notifier).state = StockStatus.normal),
                       const SizedBox(width: 8),
-                      _StatusChip(
-                          label: 'Low Stock',
-                          selected: statusFilter == StockStatus.low,
-                          color: AppColors.warning,
-                          onTap: () => ref
-                              .read(inventoryStatusFilterProvider.notifier)
-                              .state = StockStatus.low),
+                      _StatusChip(label: 'Low Stock', selected: statusFilter == StockStatus.low, color: AppColors.warning, onTap: () => ref.read(inventoryStatusFilterProvider.notifier).state = StockStatus.low),
                       const SizedBox(width: 8),
-                      _StatusChip(
-                          label: 'Out of Stock',
-                          selected: statusFilter == StockStatus.outOfStock,
-                          color: AppColors.error,
-                          onTap: () => ref
-                              .read(inventoryStatusFilterProvider.notifier)
-                              .state = StockStatus.outOfStock),
+                      _StatusChip(label: 'Out of Stock', selected: statusFilter == StockStatus.outOfStock, color: AppColors.error, onTap: () => ref.read(inventoryStatusFilterProvider.notifier).state = StockStatus.outOfStock),
                       const SizedBox(width: 8),
-                      _StatusChip(
-                          label: 'Overstock',
-                          selected: statusFilter == StockStatus.overstock,
-                          color: AppColors.info,
-                          onTap: () => ref
-                              .read(inventoryStatusFilterProvider.notifier)
-                              .state = StockStatus.overstock),
+                      _StatusChip(label: 'Overstock', selected: statusFilter == StockStatus.overstock, color: AppColors.info, onTap: () => ref.read(inventoryStatusFilterProvider.notifier).state = StockStatus.overstock),
                     ],
                   ),
                 ),
@@ -284,17 +214,12 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color:
-                              isDark ? AppColors.darkBorder : AppColors.border),
+                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                     child: filteredAsync.when(
                       loading: () => ListView.builder(
-                        itemCount: 6,
-                        padding: const EdgeInsets.all(16),
-                        itemBuilder: (_, __) => const Padding(
-                            padding: EdgeInsets.only(bottom: 12),
-                            child: SkeletonLoader(height: 80)),
+                        itemCount: 6, padding: const EdgeInsets.all(16),
+                        itemBuilder: (_, __) => const Padding(padding: EdgeInsets.only(bottom: 12), child: SkeletonLoader(height: 80)),
                       ),
                       error: (err, _) => Center(child: Text('Error: $err')),
                       data: (items) {
@@ -303,18 +228,9 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.inventory,
-                                    size: 64,
-                                    color: isDark
-                                        ? AppColors.darkTextSecondary
-                                        : AppColors.textTertiary),
+                                Icon(Icons.inventory, size: 64, color: isDark ? AppColors.darkTextSecondary : AppColors.textTertiary),
                                 const SizedBox(height: 16),
-                                Text('No inventory items found',
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        color: isDark
-                                            ? AppColors.darkTextSecondary
-                                            : AppColors.textSecondary)),
+                                Text('No inventory items found', style: TextStyle(fontSize: 18, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                               ],
                             ),
                           );
@@ -322,14 +238,12 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
                         return ListView.separated(
                           padding: const EdgeInsets.all(12),
                           itemCount: items.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (_, i) {
                             final item = items[i];
                             return _InventoryCard(
                               item: item,
-                              isSelected:
-                                  _selectedItem?.productId == item.productId,
+                              isSelected: _selectedItem?.productId == item.productId,
                               isDark: isDark,
                               onTap: () => _openDetail(item),
                               onTransfer: () => _showTransferDialog(item),
@@ -369,11 +283,7 @@ class _KpiCard extends StatelessWidget {
   final String label;
   final String subtitle;
   final Color color;
-  const _KpiCard(
-      {required this.icon,
-      required this.label,
-      required this.subtitle,
-      required this.color});
+  const _KpiCard({required this.icon, required this.label, required this.subtitle, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -392,14 +302,8 @@ class _KpiCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: color)),
-                Text(subtitle,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textSecondary)),
+                Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
               ],
             ),
           ],
@@ -415,11 +319,7 @@ class _StatusChip extends StatelessWidget {
   final bool selected;
   final Color? color;
   final VoidCallback onTap;
-  const _StatusChip(
-      {required this.label,
-      required this.selected,
-      this.color,
-      required this.onTap});
+  const _StatusChip({required this.label, required this.selected, this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -433,11 +333,7 @@ class _StatusChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: selected ? c : AppColors.border),
         ),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected ? c : AppColors.textSecondary)),
+        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: selected ? c : AppColors.textSecondary)),
       ),
     );
   }
@@ -450,36 +346,23 @@ class _InventoryCard extends StatelessWidget {
   final bool isDark;
   final VoidCallback onTap;
   final VoidCallback onTransfer;
-  const _InventoryCard(
-      {required this.item,
-      required this.isSelected,
-      required this.isDark,
-      required this.onTap,
-      required this.onTransfer});
+  const _InventoryCard({required this.item, required this.isSelected, required this.isDark, required this.onTap, required this.onTransfer});
 
   Color get _statusColor {
     switch (item.status) {
-      case StockStatus.outOfStock:
-        return AppColors.error;
-      case StockStatus.low:
-        return AppColors.warning;
-      case StockStatus.overstock:
-        return AppColors.info;
-      case StockStatus.normal:
-        return AppColors.success;
+      case StockStatus.outOfStock: return AppColors.error;
+      case StockStatus.low: return AppColors.warning;
+      case StockStatus.overstock: return AppColors.info;
+      case StockStatus.normal: return AppColors.success;
     }
   }
 
   String get _statusLabel {
     switch (item.status) {
-      case StockStatus.outOfStock:
-        return 'Out of Stock';
-      case StockStatus.low:
-        return 'Low Stock';
-      case StockStatus.overstock:
-        return 'Overstock';
-      case StockStatus.normal:
-        return 'Normal';
+      case StockStatus.outOfStock: return 'Out of Stock';
+      case StockStatus.low: return 'Low Stock';
+      case StockStatus.overstock: return 'Overstock';
+      case StockStatus.normal: return 'Normal';
     }
   }
 
@@ -492,40 +375,22 @@ class _InventoryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.04)
-              : (isDark ? AppColors.darkSurface : AppColors.surface),
+          color: isSelected ? AppColors.primary.withOpacity(0.04) : (isDark ? AppColors.darkSurface : AppColors.surface),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : (isDark ? AppColors.darkBorder : AppColors.border),
-              width: isSelected ? 1.5 : 1),
+          border: Border.all(color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border), width: isSelected ? 1.5 : 1),
         ),
         child: Row(
           children: [
-            Container(
-                width: 4,
-                height: 50,
-                decoration: BoxDecoration(
-                    color: _statusColor,
-                    borderRadius: BorderRadius.circular(2))),
+            Container(width: 4, height: 50, decoration: BoxDecoration(color: _statusColor, borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 14),
             Expanded(
               flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.productName,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text(item.productName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                   const SizedBox(height: 4),
-                  Text(item.barcode ?? 'No barcode',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary)),
+                  Text(item.barcode ?? 'No barcode', style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                 ],
               ),
             ),
@@ -534,21 +399,12 @@ class _InventoryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('${item.totalStock.toStringAsFixed(1)} $unit',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text('${item.totalStock.toStringAsFixed(1)} $unit', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                   const SizedBox(height: 4),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                        color: _statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Text(_statusLabel,
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: _statusColor,
-                            fontWeight: FontWeight.w500)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: _statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                    child: Text(_statusLabel, style: TextStyle(fontSize: 11, color: _statusColor, fontWeight: FontWeight.w500)),
                   ),
                 ],
               ),
@@ -559,16 +415,9 @@ class _InventoryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('\$${item.totalValue.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text('\$${item.totalValue.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                   const SizedBox(height: 4),
-                  Text('Value',
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary)),
+                  Text('Value', style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                 ],
               ),
             ),
@@ -579,27 +428,9 @@ class _InventoryCard extends StatelessWidget {
                 if (action == 'transfer') onTransfer();
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(
-                    value: 'transfer',
-                    child: Row(children: [
-                      Icon(Icons.swap_horiz, size: 18),
-                      SizedBox(width: 8),
-                      Text('Transfer')
-                    ])),
-                const PopupMenuItem(
-                    value: 'adjust',
-                    child: Row(children: [
-                      Icon(Icons.tune, size: 18),
-                      SizedBox(width: 8),
-                      Text('Adjust Stock')
-                    ])),
-                const PopupMenuItem(
-                    value: 'history',
-                    child: Row(children: [
-                      Icon(Icons.history, size: 18),
-                      SizedBox(width: 8),
-                      Text('View History')
-                    ])),
+                const PopupMenuItem(value: 'transfer', child: Row(children: [Icon(Icons.swap_horiz, size: 18), SizedBox(width: 8), Text('Transfer')])),
+                const PopupMenuItem(value: 'adjust', child: Row(children: [Icon(Icons.tune, size: 18), SizedBox(width: 8), Text('Adjust Stock')])),
+                const PopupMenuItem(value: 'history', child: Row(children: [Icon(Icons.history, size: 18), SizedBox(width: 8), Text('View History')])),
               ],
             ),
           ],
@@ -638,70 +469,49 @@ class _TransferDialogState extends State<_TransferDialog> {
             DropdownButtonFormField<int>(
               value: _fromWarehouse,
               decoration: const InputDecoration(labelText: 'From Warehouse'),
-              items: warehouses
-                  .map((w) => DropdownMenuItem(
-                      value: w.warehouseId, child: Text(w.warehouseName)))
-                  .toList(),
+              items: warehouses.map((w) => DropdownMenuItem(value: w.warehouseId, child: Text(w.warehouseName))).toList(),
               onChanged: (v) => setState(() => _fromWarehouse = v),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<int>(
               value: _toWarehouse,
               decoration: const InputDecoration(labelText: 'To Warehouse'),
-              items: warehouses
-                  .map((w) => DropdownMenuItem(
-                      value: w.warehouseId, child: Text(w.warehouseName)))
-                  .toList(),
+              items: warehouses.map((w) => DropdownMenuItem(value: w.warehouseId, child: Text(w.warehouseName))).toList(),
               onChanged: (v) => setState(() => _toWarehouse = v),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _qtyController,
-              decoration: InputDecoration(
-                  labelText: 'Quantity (${widget.item.baseUnit})'),
+              decoration: InputDecoration(labelText: 'Quantity (${widget.item.baseUnit})'),
               keyboardType: TextInputType.number,
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         ElevatedButton(
-          onPressed: _loading
-              ? null
-              : () async {
-                  if (_fromWarehouse == null ||
-                      _toWarehouse == null ||
-                      _qtyController.text.isEmpty) return;
-                  setState(() => _loading = true);
-                  try {
-                    final repo = widget.ref.read(inventoryRepositoryProvider);
-                    await repo.createTransfer(
-                      fromWarehouseId: _fromWarehouse!,
-                      toWarehouseId: _toWarehouse!,
-                      productId: widget.item.productId,
-                      quantity: double.parse(_qtyController.text),
-                      unitType: widget.item.baseUnit,
-                    );
-                    widget.ref.invalidate(inventoryDataProvider);
-                    if (mounted) Navigator.pop(context);
-                  } catch (e) {
-                    if (mounted)
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Error: $e'),
-                          backgroundColor: Colors.red));
-                  } finally {
-                    if (mounted) setState(() => _loading = false);
-                  }
-                },
-          child: _loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Transfer'),
+          onPressed: _loading ? null : () async {
+            if (_fromWarehouse == null || _toWarehouse == null || _qtyController.text.isEmpty) return;
+            setState(() => _loading = true);
+            try {
+              final repo = widget.ref.read(inventoryRepositoryProvider);
+              await repo.createTransfer(
+                fromWarehouseId: _fromWarehouse!,
+                toWarehouseId: _toWarehouse!,
+                productId: widget.item.productId,
+                quantity: double.parse(_qtyController.text),
+                unitType: widget.item.baseUnit,
+              );
+              widget.ref.invalidate(inventoryDataProvider);
+              if (mounted) Navigator.pop(context);
+            } catch (e) {
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+            } finally {
+              if (mounted) setState(() => _loading = false);
+            }
+          },
+          child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Transfer'),
         ),
       ],
     );
@@ -731,15 +541,11 @@ class _InventoryAiDialogState extends State<_InventoryAiDialog> {
   ];
 
   Future<void> _ask(String q) async {
-    setState(() {
-      _loading = true;
-      _response = null;
-    });
+    setState(() { _loading = true; _response = null; });
     try {
       final repo = widget.ref.read(inventoryRepositoryProvider);
       final result = await repo.aiChat(q);
-      setState(
-          () => _response = result['response']?.toString() ?? 'No response');
+      setState(() => _response = result['response']?.toString() ?? 'No response');
     } catch (e) {
       setState(() => _response = 'Error: $e');
     } finally {
@@ -750,43 +556,22 @@ class _InventoryAiDialogState extends State<_InventoryAiDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(children: [
-        Icon(Icons.smart_toy, color: AppColors.primary),
-        SizedBox(width: 8),
-        Text('Inventory AI')
-      ]),
+      title: const Row(children: [Icon(Icons.smart_toy, color: AppColors.primary), SizedBox(width: 8), Text('Inventory AI')]),
       content: SizedBox(
-        width: 500,
-        height: 400,
+        width: 500, height: 400,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _suggestions
-                  .map((q) => ActionChip(
-                      label: Text(q, style: const TextStyle(fontSize: 12)),
-                      onPressed: () {
-                        _controller.text = q;
-                        _ask(q);
-                      }))
-                  .toList(),
+              spacing: 8, runSpacing: 8,
+              children: _suggestions.map((q) => ActionChip(label: Text(q, style: const TextStyle(fontSize: 12)), onPressed: () { _controller.text = q; _ask(q); })).toList(),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(
-                    child: TextField(
-                        controller: _controller,
-                        decoration: const InputDecoration(
-                            hintText: 'Ask about inventory...',
-                            border: OutlineInputBorder()),
-                        onSubmitted: _ask)),
+                Expanded(child: TextField(controller: _controller, decoration: const InputDecoration(hintText: 'Ask about inventory...', border: OutlineInputBorder()), onSubmitted: _ask)),
                 const SizedBox(width: 8),
-                IconButton(
-                    onPressed: () => _ask(_controller.text),
-                    icon: const Icon(Icons.send, color: AppColors.primary)),
+                IconButton(onPressed: () => _ask(_controller.text), icon: const Icon(Icons.send, color: AppColors.primary)),
               ],
             ),
             const SizedBox(height: 16),
@@ -794,28 +579,17 @@ class _InventoryAiDialogState extends State<_InventoryAiDialog> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _response != null
-                      ? SingleChildScrollView(
-                          child: Container(
+                      ? SingleChildScrollView(child: Container(
                           padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.04),
-                              borderRadius: BorderRadius.circular(8)),
-                          child: SelectableText(_response!,
-                              style:
-                                  const TextStyle(fontSize: 13, height: 1.5)),
+                          decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.04), borderRadius: BorderRadius.circular(8)),
+                          child: SelectableText(_response!, style: const TextStyle(fontSize: 13, height: 1.5)),
                         ))
-                      : const Center(
-                          child: Text('Ask me anything about your inventory!',
-                              style:
-                                  TextStyle(color: AppColors.textSecondary))),
+                      : const Center(child: Text('Ask me anything about your inventory!', style: TextStyle(color: AppColors.textSecondary))),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context), child: const Text('Close'))
-      ],
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
     );
   }
 }
