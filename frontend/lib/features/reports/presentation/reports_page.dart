@@ -2,46 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/kpi_card.dart';
+import '../../../core/utils/print_helper.dart';
 import 'reports_provider.dart';
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────
-const _kHPad = EdgeInsets.symmetric(horizontal: 20);
-const _kTabCount = 4;
-
-// Vivid accent palette used across the page
-const _kSalesColor = Color(0xFF6C63FF); // purple
-const _kFinanceColor = Color(0xFF00C9A7); // teal
-const _kInventoryColor = Color(0xFFFF6B6B); // coral
-const _kCustomerColor = Color(0xFFFFB347); // amber
-
-// ─── Reports Page ─────────────────────────────────────────────────────────────
 class ReportsPage extends ConsumerStatefulWidget {
   const ReportsPage({super.key});
+
   @override
   ConsumerState<ReportsPage> createState() => _ReportsPageState();
 }
 
 class _ReportsPageState extends ConsumerState<ReportsPage>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-  int _activeTab = 0;
-
-  static const _tabs = [
-    (icon: Icons.receipt_long_rounded, label: 'Sales', color: _kSalesColor),
-    (
-      icon: Icons.account_balance_rounded,
-      label: 'Financial',
-      color: _kFinanceColor
-    ),
-    (icon: Icons.warehouse_rounded, label: 'Inventory', color: _kCustomerColor),
-    (icon: Icons.people_rounded, label: 'Customers', color: _kInventoryColor),
-  ];
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _kTabCount, vsync: this)
-      ..addListener(() => setState(() => _activeTab = _tabController.index));
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -51,36 +29,75 @@ class _ReportsPageState extends ConsumerState<ReportsPage>
   }
 
   void _refresh() {
-    for (final p in [
-      reportsDailySalesProvider,
-      reportsMonthlyProfitProvider,
-      reportsTopProductsProvider,
-      reportsInventoryProvider,
-      reportsCustomerBalancesProvider,
-      reportsSupplierBalancesProvider,
-      reportsCashFlowProvider,
-    ]) {
-      ref.invalidate(p);
-    }
+    ref.invalidate(reportsDailySalesProvider);
+    ref.invalidate(reportsMonthlyProfitProvider);
+    ref.invalidate(reportsTopProductsProvider);
+    ref.invalidate(reportsInventoryProvider);
+    ref.invalidate(reportsCustomerBalancesProvider);
+    ref.invalidate(reportsSupplierBalancesProvider);
+    ref.invalidate(reportsCashFlowProvider);
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = _tabs[_activeTab].color;
+    final profitAsync = ref.watch(reportsMonthlyProfitProvider);
+    final cashFlowAsync = ref.watch(reportsCashFlowProvider);
+    final customersAsync = ref.watch(reportsCustomerBalancesProvider);
+    final suppliersAsync = ref.watch(reportsSupplierBalancesProvider);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _GradientHeader(onRefresh: _refresh, activeColor: activeColor),
-          _KPIRow(),
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+            child: Row(
+              children: [
+                const Icon(Icons.bar_chart_rounded,
+                    color: AppColors.primary, size: 28),
+                const SizedBox(width: 12),
+                const Text('Reports',
+                    style:
+                        TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                const Spacer(),
+                IconButton(
+                    onPressed: _refresh,
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh'),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           Padding(
-            padding: _kHPad,
-            child: _ColoredTabBar(
-                controller: _tabController, tabs: _tabs, activeTab: _activeTab),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _buildKPIRow(
+                profitAsync, cashFlowAsync, customersAsync, suppliersAsync),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12)),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(10)),
+              labelColor: Colors.white,
+              unselectedLabelColor: AppColors.primary,
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(text: 'Sales', icon: Icon(Icons.receipt_long, size: 16)),
+                Tab(
+                    text: 'Financial',
+                    icon: Icon(Icons.account_balance, size: 16)),
+                Tab(text: 'Inventory', icon: Icon(Icons.warehouse, size: 16)),
+                Tab(text: 'Customers', icon: Icon(Icons.people, size: 16)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -96,342 +113,280 @@ class _ReportsPageState extends ConsumerState<ReportsPage>
       ),
     );
   }
-}
 
-// ─── Gradient Header ──────────────────────────────────────────────────────────
-class _GradientHeader extends StatelessWidget {
-  const _GradientHeader({required this.onRefresh, required this.activeColor});
-  final VoidCallback onRefresh;
-  final Color activeColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 52, 20, 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [activeColor, activeColor.withOpacity(0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-              color: activeColor.withOpacity(0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 8)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.bar_chart_rounded,
-                color: Colors.white, size: 26),
-          ),
-          const SizedBox(width: 14),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Reports',
-                  style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: -0.5)),
-              Text('Business Overview',
-                  style: TextStyle(fontSize: 13, color: Colors.white70)),
-            ],
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: onRefresh,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.3)),
-              ),
-              child: const Icon(Icons.refresh_rounded,
-                  color: Colors.white, size: 20),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── KPI Row ──────────────────────────────────────────────────────────────────
-class _KPIRow extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profitAsync = ref.watch(reportsMonthlyProfitProvider);
-    final cashFlowAsync = ref.watch(reportsCashFlowProvider);
-    final customersAsync = ref.watch(reportsCustomerBalancesProvider);
-    final suppliersAsync = ref.watch(reportsSupplierBalancesProvider);
-
-    final cards = [
-      (
-        label: 'Revenue',
-        icon: Icons.trending_up_rounded,
-        color: _kSalesColor,
-        value: profitAsync.when(
-          data: (d) {
-            final m = d['data'] as List? ?? [];
-            return m.isNotEmpty ? _fmtAmount(m.last['revenue']) : '0';
-          },
-          loading: () => '…',
-          error: (_, __) => 'N/A',
-        ),
-      ),
-      (
-        label: 'Cash',
-        icon: Icons.account_balance_wallet_rounded,
-        color: _kFinanceColor,
-        value: cashFlowAsync.when(
-          data: (d) => _fmtAmount(d['data']?['net_flow']),
-          loading: () => '…',
-          error: (_, __) => 'N/A',
-        ),
-      ),
-      (
-        label: 'Receivable',
-        icon: Icons.call_received_rounded,
-        color: _kCustomerColor,
-        value: customersAsync.when(
-          data: (d) => _fmtAmount(d['total_receivable']),
-          loading: () => '…',
-          error: (_, __) => 'N/A',
-        ),
-      ),
-      (
-        label: 'Payable',
-        icon: Icons.call_made_rounded,
-        color: _kInventoryColor,
-        value: suppliersAsync.when(
-          data: (d) => _fmtAmount(d['total_payable']),
-          loading: () => '…',
-          error: (_, __) => 'N/A',
-        ),
-      ),
-    ];
-
-    return Transform.translate(
-      offset: const Offset(0, -16),
-      child: Padding(
-        padding: _kHPad,
-        child: Row(
-          children: cards.expand((c) sync* {
-            yield Expanded(
-                child: _KPITile(
-                    label: c.label,
-                    value: c.value,
-                    icon: c.icon,
-                    color: c.color));
-            if (c != cards.last) yield const SizedBox(width: 10);
-          }).toList(),
-        ),
-      ),
-    );
-  }
-}
-
-class _KPITile extends StatelessWidget {
-  const _KPITile(
-      {required this.label,
-      required this.value,
-      required this.icon,
-      required this.color});
-  final String label, value;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: color.withOpacity(0.15),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
-        ],
-        border: Border(left: BorderSide(color: color, width: 3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, size: 14, color: color),
-          ),
-          const SizedBox(height: 8),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w800, color: color)),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF9E9E9E),
-                  fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Colored Tab Bar ──────────────────────────────────────────────────────────
-class _ColoredTabBar extends StatelessWidget {
-  const _ColoredTabBar(
-      {required this.controller, required this.tabs, required this.activeTab});
-  final TabController controller;
-  final List<({IconData icon, String label, Color color})> tabs;
-  final int activeTab;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildKPIRow(
+    AsyncValue<Map<String, dynamic>> profitAsync,
+    AsyncValue<Map<String, dynamic>> cashFlowAsync,
+    AsyncValue<Map<String, dynamic>> customersAsync,
+    AsyncValue<Map<String, dynamic>> suppliersAsync,
+  ) {
     return Row(
-      children: tabs.asMap().entries.map((e) {
-        final isActive = e.key == activeTab;
-        final t = e.value;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => controller.animateTo(e.key),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-              margin: EdgeInsets.only(right: e.key < tabs.length - 1 ? 8 : 0),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: isActive ? t.color : Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: isActive
-                    ? [
-                        BoxShadow(
-                            color: t.color.withOpacity(0.4),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4))
-                      ]
-                    : [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4)
-                      ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(t.icon,
-                      size: 18, color: isActive ? Colors.white : t.color),
-                  const SizedBox(height: 4),
-                  Text(
-                    t.label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: isActive ? Colors.white : t.color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+      children: [
+        Expanded(
+            child: profitAsync.when(
+          data: (data) {
+            final months = data['data'] as List? ?? [];
+            final revenue =
+                months.isNotEmpty ? _parseNum(months.last['revenue']) : 0.0;
+            return KPICard(
+                title: 'Monthly Revenue',
+                value: '${_formatNum(revenue)} IQD',
+                icon: Icons.trending_up,
+                color: AppColors.success);
+          },
+          loading: () => const KPICard(
+              title: 'Monthly Revenue',
+              value: '...',
+              icon: Icons.trending_up,
+              color: AppColors.success),
+          error: (_, __) => const KPICard(
+              title: 'Monthly Revenue',
+              value: 'N/A',
+              icon: Icons.trending_up,
+              color: AppColors.success),
+        )),
+        const SizedBox(width: 12),
+        Expanded(
+            child: cashFlowAsync.when(
+          data: (data) {
+            final netFlow = _parseNum(data['data']?['net_flow']);
+            return KPICard(
+                title: 'Cash Balance',
+                value: '${_formatNum(netFlow)} IQD',
+                icon: Icons.account_balance_wallet,
+                color: AppColors.info);
+          },
+          loading: () => const KPICard(
+              title: 'Cash Balance',
+              value: '...',
+              icon: Icons.account_balance_wallet,
+              color: AppColors.info),
+          error: (_, __) => const KPICard(
+              title: 'Cash Balance',
+              value: 'N/A',
+              icon: Icons.account_balance_wallet,
+              color: AppColors.info),
+        )),
+        const SizedBox(width: 12),
+        Expanded(
+            child: customersAsync.when(
+          data: (data) => KPICard(
+              title: 'Receivables',
+              value: '${_formatNum(_parseNum(data['total_receivable']))} IQD',
+              icon: Icons.people,
+              color: AppColors.warning),
+          loading: () => const KPICard(
+              title: 'Receivables',
+              value: '...',
+              icon: Icons.people,
+              color: AppColors.warning),
+          error: (_, __) => const KPICard(
+              title: 'Receivables',
+              value: 'N/A',
+              icon: Icons.people,
+              color: AppColors.warning),
+        )),
+        const SizedBox(width: 12),
+        Expanded(
+            child: suppliersAsync.when(
+          data: (data) => KPICard(
+              title: 'Payables',
+              value: '${_formatNum(_parseNum(data['total_payable']))} IQD',
+              icon: Icons.local_shipping,
+              color: AppColors.error),
+          loading: () => const KPICard(
+              title: 'Payables',
+              value: '...',
+              icon: Icons.local_shipping,
+              color: AppColors.error),
+          error: (_, __) => const KPICard(
+              title: 'Payables',
+              value: 'N/A',
+              icon: Icons.local_shipping,
+              color: AppColors.error),
+        )),
+      ],
     );
+  }
+
+  double _parseNum(dynamic v) {
+    if (v == null) return 0;
+    if (v is String) return double.tryParse(v) ?? 0;
+    return v.toDouble();
+  }
+
+  String _formatNum(double n) {
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K';
+    return n.toStringAsFixed(0);
   }
 }
 
-// ─── Sales Tab ────────────────────────────────────────────────────────────────
+// ─── Sales Report Tab ────────────────────────────────────────────────────────
 class _SalesReportTab extends ConsumerWidget {
   const _SalesReportTab();
+
+  void _print(Map<String, dynamic> salesData, Map<String, dynamic> topData) {
+    final days = (salesData['data'] as List?) ?? [];
+    final products = (topData['data'] as List?) ?? [];
+
+    var tableHtml = buildTableHtml(
+      sectionTitle: 'Daily Sales (Last 30 Days)',
+      headers: [
+        'Date',
+        'Invoices',
+        'Total Sales',
+        'Cash Collected',
+        'Credit Sales'
+      ],
+      rows: days
+          .map<List<String>>((d) => [
+                d['date'] ?? '',
+                '${d['invoice_count']}',
+                '${_fmtAmount(d['total_sales'])} IQD',
+                '${_fmtAmount(d['cash_collected'])} IQD',
+                '${_fmtAmount(d['credit_sales'])} IQD',
+              ])
+          .toList(),
+    );
+
+    tableHtml += buildTableHtml(
+      sectionTitle: 'Top Selling Products',
+      headers: ['#', 'Product', 'Qty Sold', 'Revenue'],
+      rows: products
+          .asMap()
+          .entries
+          .map<List<String>>((e) => [
+                '${e.key + 1}',
+                e.value['product_name'] ?? '',
+                '${e.value['total_quantity']}',
+                '${_fmtAmount(e.value['total_revenue'])} IQD',
+              ])
+          .toList(),
+    );
+
+    printReportHtml(title: 'Sales Report', tableHtml: tableHtml);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final salesAsync = ref.watch(reportsDailySalesProvider);
     final topAsync = ref.watch(reportsTopProductsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader('Daily Sales', 'Last 30 Days', _kSalesColor,
-              Icons.calendar_today_rounded),
+          _reportHeader('Sales Report', () {
+            final sales = salesAsync.valueOrNull ?? {};
+            final top = topAsync.valueOrNull ?? {};
+            _print(sales, top);
+          }),
+          const SizedBox(height: 16),
+          _sectionTitle('Daily Sales (Last 30 Days)'),
           const SizedBox(height: 12),
           salesAsync.when(
             data: (data) {
-              final days = data['data'] as List? ?? [];
-              if (days.isEmpty)
-                return const _EmptyState(message: 'No sales data');
-              return _StyledTable(
-                accentColor: _kSalesColor,
-                columns: const [
-                  'Date',
-                  'Invoices',
-                  'Total Sales',
-                  'Cash',
-                  'Credit'
-                ],
-                numericCols: const {1, 2, 3, 4},
-                boldCols: const {2},
-                rows: days
-                    .map((d) => [
-                          d['date'] ?? '',
-                          '${d['invoice_count']}',
-                          _fmtAmount(d['total_sales']),
-                          _fmtAmount(d['cash_collected']),
-                          _fmtAmount(d['credit_sales']),
-                        ])
-                    .toList(),
-              );
+              final days = (data['data'] as List?) ?? [];
+              if (days.isEmpty) return const Text('No sales data available');
+              return _buildContainer(isDark,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(isDark
+                        ? AppColors.darkBackground
+                        : AppColors.background),
+                    columns: const [
+                      DataColumn(
+                          label: Text('Date',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                      DataColumn(
+                          label: Text('Invoices',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Total Sales',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Cash Collected',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Credit Sales',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                    ],
+                    rows: days
+                        .map<DataRow>((d) => DataRow(cells: [
+                              DataCell(Text(d['date'] ?? '',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text('${d['invoice_count']}',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(_fmtAmount(d['total_sales']),
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600))),
+                              DataCell(Text(_fmtAmount(d['cash_collected']),
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(_fmtAmount(d['credit_sales']),
+                                  style: const TextStyle(fontSize: 13))),
+                            ]))
+                        .toList(),
+                  ));
             },
-            loading: () => const _LoadingIndicator(color: _kSalesColor),
-            error: (e, _) => _ErrorText(e),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e'),
           ),
           const SizedBox(height: 24),
-          _SectionHeader(
-              'Top Products', 'Best Sellers', _kSalesColor, Icons.star_rounded),
+          _sectionTitle('Top Selling Products'),
           const SizedBox(height: 12),
           topAsync.when(
             data: (data) {
-              final products = data['data'] as List? ?? [];
-              if (products.isEmpty)
-                return const _EmptyState(message: 'No product data');
-              return _StyledTable(
-                accentColor: _kSalesColor,
-                columns: const ['#', 'Product', 'Qty', 'Revenue'],
-                numericCols: const {2, 3},
-                boldCols: const {3},
-                rows: products
-                    .asMap()
-                    .entries
-                    .map((e) => [
-                          '${e.key + 1}',
-                          e.value['product_name'] ?? '',
-                          '${e.value['total_quantity']}',
-                          _fmtAmount(e.value['total_revenue']),
-                        ])
-                    .toList(),
-              );
+              final products = (data['data'] as List?) ?? [];
+              if (products.isEmpty) return const Text('No product data');
+              return _buildContainer(isDark,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(isDark
+                        ? AppColors.darkBackground
+                        : AppColors.background),
+                    columns: const [
+                      DataColumn(
+                          label: Text('#',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                      DataColumn(
+                          label: Text('Product',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                      DataColumn(
+                          label: Text('Qty Sold',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Revenue',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                    ],
+                    rows: products
+                        .asMap()
+                        .entries
+                        .map<DataRow>((e) => DataRow(cells: [
+                              DataCell(Text('${e.key + 1}',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(e.value['product_name'] ?? '',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text('${e.value['total_quantity']}',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(
+                                  _fmtAmount(e.value['total_revenue']),
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600))),
+                            ]))
+                        .toList(),
+                  ));
             },
-            loading: () => const _LoadingIndicator(color: _kSalesColor),
-            error: (e, _) => _ErrorText(e),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e'),
           ),
         ],
       ),
@@ -439,108 +394,217 @@ class _SalesReportTab extends ConsumerWidget {
   }
 }
 
-// ─── Financial Tab ────────────────────────────────────────────────────────────
+// ─── Financial Report Tab ────────────────────────────────────────────────────
 class _FinancialReportTab extends ConsumerWidget {
   const _FinancialReportTab();
+
+  void _print(Map<String, dynamic> profitData, Map<String, dynamic> cashData) {
+    final months = (profitData['data'] as List?) ?? [];
+    final flowData = cashData['data'] as Map<String, dynamic>? ?? {};
+    final days = (flowData['days'] as List?) ?? [];
+
+    var tableHtml = buildTableHtml(
+      sectionTitle: 'Monthly Profit & Loss',
+      headers: [
+        'Month',
+        'Revenue',
+        'COGS',
+        'Gross Profit',
+        'Expenses',
+        'Net Profit',
+        'Margin'
+      ],
+      rows: months
+          .map<List<String>>((m) => [
+                m['month'] ?? '',
+                '${_fmtAmount(m['revenue'])} IQD',
+                '${_fmtAmount(m['cogs'])} IQD',
+                '${_fmtAmount(m['gross_profit'])} IQD',
+                '${_fmtAmount(m['expenses'])} IQD',
+                '${_fmtAmount(m['net_profit'])} IQD',
+                '${m['gross_margin']}%',
+              ])
+          .toList(),
+    );
+
+    tableHtml +=
+        '<br><p style="font-size:14px;margin:10px 0;"><strong>Summary:</strong> Total In: ${_fmtAmount(flowData['total_in'])} IQD | Total Out: ${_fmtAmount(flowData['total_out'])} IQD | Net: ${_fmtAmount(flowData['net_flow'])} IQD</p>';
+
+    tableHtml += buildTableHtml(
+      sectionTitle: 'Cash Flow (Last 30 Days)',
+      headers: ['Date', 'Cash In', 'Cash Out', 'Net'],
+      rows: days
+          .map<List<String>>((d) => [
+                d['date'] ?? '',
+                '${_fmtAmount(d['cash_in'])} IQD',
+                '${_fmtAmount(d['cash_out'])} IQD',
+                '${_fmtAmount(d['net'])} IQD',
+              ])
+          .toList(),
+    );
+
+    printReportHtml(title: 'Financial Report', tableHtml: tableHtml);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profitAsync = ref.watch(reportsMonthlyProfitProvider);
     final cashFlowAsync = ref.watch(reportsCashFlowProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader('Monthly P&L', 'Profit & Loss', _kFinanceColor,
-              Icons.show_chart_rounded),
+          _reportHeader('Financial Report', () {
+            final profit = profitAsync.valueOrNull ?? {};
+            final cash = cashFlowAsync.valueOrNull ?? {};
+            _print(profit, cash);
+          }),
+          const SizedBox(height: 16),
+          _sectionTitle('Monthly P&L'),
           const SizedBox(height: 12),
           profitAsync.when(
             data: (data) {
-              final months = data['data'] as List? ?? [];
-              if (months.isEmpty)
-                return const _EmptyState(message: 'No profit data');
-              return _StyledTable(
-                accentColor: _kFinanceColor,
-                columns: const [
-                  'Month',
-                  'Revenue',
-                  'COGS',
-                  'Gross',
-                  'Expenses',
-                  'Net',
-                  'Margin'
-                ],
-                numericCols: const {1, 2, 3, 4, 5, 6},
-                boldCols: const {3, 5},
-                rows: months
-                    .map((m) => [
-                          m['month'] ?? '',
-                          _fmtAmount(m['revenue']),
-                          _fmtAmount(m['cogs']),
-                          _fmtAmount(m['gross_profit']),
-                          _fmtAmount(m['expenses']),
-                          _fmtAmount(m['net_profit']),
-                          '${m['gross_margin']}%',
-                        ])
-                    .toList(),
-                colorResolver: (col, val) {
-                  if (col == 3) return AppColors.success;
-                  if (col == 5) return _profitColor(val);
-                  return null;
-                },
-              );
+              final months = (data['data'] as List?) ?? [];
+              if (months.isEmpty) return const Text('No profit data');
+              return _buildContainer(isDark,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(isDark
+                        ? AppColors.darkBackground
+                        : AppColors.background),
+                    columns: const [
+                      DataColumn(
+                          label: Text('Month',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                      DataColumn(
+                          label: Text('Revenue',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('COGS',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Gross Profit',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Expenses',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Net Profit',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Margin',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                    ],
+                    rows: months
+                        .map<DataRow>((m) => DataRow(cells: [
+                              DataCell(Text(m['month'] ?? '',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(_fmtAmount(m['revenue']),
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(_fmtAmount(m['cogs']),
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(_fmtAmount(m['gross_profit']),
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.success))),
+                              DataCell(Text(_fmtAmount(m['expenses']),
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(_fmtAmount(m['net_profit']),
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _profitColor(m['net_profit'])))),
+                              DataCell(Text('${m['gross_margin']}%',
+                                  style: const TextStyle(fontSize: 13))),
+                            ]))
+                        .toList(),
+                  ));
             },
-            loading: () => const _LoadingIndicator(color: _kFinanceColor),
-            error: (e, _) => _ErrorText(e),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e'),
           ),
           const SizedBox(height: 24),
-          _SectionHeader('Cash Flow', 'Last 30 Days', _kFinanceColor,
-              Icons.waterfall_chart_rounded),
+          _sectionTitle('Cash Flow (Last 30 Days)'),
           const SizedBox(height: 12),
           cashFlowAsync.when(
             data: (data) {
               final flowData = data['data'] as Map<String, dynamic>? ?? {};
-              final days = flowData['days'] as List? ?? [];
-              if (days.isEmpty)
-                return const _EmptyState(message: 'No cash flow data');
+              final days = (flowData['days'] as List?) ?? [];
+              if (days.isEmpty) return const Text('No cash flow data');
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    _FlowBadge('In', flowData['total_in'], AppColors.success),
-                    const SizedBox(width: 10),
-                    _FlowBadge('Out', flowData['total_out'], _kInventoryColor),
-                    const SizedBox(width: 10),
-                    _FlowBadge('Net', flowData['net_flow'], _kFinanceColor),
+                    _statBadge(
+                        'Total In', flowData['total_in'], AppColors.success),
+                    const SizedBox(width: 12),
+                    _statBadge(
+                        'Total Out', flowData['total_out'], AppColors.error),
+                    const SizedBox(width: 12),
+                    _statBadge(
+                        'Net Flow', flowData['net_flow'], AppColors.info),
                   ]),
-                  const SizedBox(height: 14),
-                  _StyledTable(
-                    accentColor: _kFinanceColor,
-                    columns: const ['Date', 'Cash In', 'Cash Out', 'Net'],
-                    numericCols: const {1, 2, 3},
-                    boldCols: const {3},
-                    rows: days
-                        .map((d) => [
-                              d['date'] ?? '',
-                              _fmtAmount(d['cash_in']),
-                              _fmtAmount(d['cash_out']),
-                              _fmtAmount(d['net']),
-                            ])
-                        .toList(),
-                    colorResolver: (col, val) {
-                      if (col == 1) return AppColors.success;
-                      if (col == 2) return _kInventoryColor;
-                      if (col == 3) return _profitColor(val);
-                      return null;
-                    },
-                  ),
+                  const SizedBox(height: 16),
+                  _buildContainer(isDark,
+                      child: DataTable(
+                        headingRowColor: WidgetStateProperty.all(isDark
+                            ? AppColors.darkBackground
+                            : AppColors.background),
+                        columns: const [
+                          DataColumn(
+                              label: Text('Date',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600))),
+                          DataColumn(
+                              label: Text('Cash In',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                              numeric: true),
+                          DataColumn(
+                              label: Text('Cash Out',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                              numeric: true),
+                          DataColumn(
+                              label: Text('Net',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                              numeric: true),
+                        ],
+                        rows: days
+                            .map<DataRow>((d) => DataRow(cells: [
+                                  DataCell(Text(d['date'] ?? '',
+                                      style: const TextStyle(fontSize: 13))),
+                                  DataCell(Text(_fmtAmount(d['cash_in']),
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          color: AppColors.success))),
+                                  DataCell(Text(_fmtAmount(d['cash_out']),
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          color: AppColors.error))),
+                                  DataCell(Text(_fmtAmount(d['net']),
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: _profitColor(d['net'])))),
+                                ]))
+                            .toList(),
+                      )),
                 ],
               );
             },
-            loading: () => const _LoadingIndicator(color: _kFinanceColor),
-            error: (e, _) => _ErrorText(e),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e'),
           ),
         ],
       ),
@@ -548,57 +612,121 @@ class _FinancialReportTab extends ConsumerWidget {
   }
 }
 
-// ─── Inventory Tab ────────────────────────────────────────────────────────────
+// ─── Inventory Report Tab ────────────────────────────────────────────────────
 class _InventoryReportTab extends ConsumerWidget {
   const _InventoryReportTab();
+
+  void _print(Map<String, dynamic> data) {
+    final valuation = data['data'] as Map<String, dynamic>? ?? {};
+    final warehouses = (valuation['warehouses'] as List?) ?? [];
+
+    var tableHtml =
+        '<p style="font-size:16px;font-weight:bold;margin-bottom:15px;">Total Inventory Value: ${_fmtAmount(valuation['grand_total_value'])} IQD</p>';
+    tableHtml += buildTableHtml(
+      sectionTitle: 'Inventory Valuation by Warehouse',
+      headers: ['Warehouse', 'Products', 'Total Qty', 'Value (IQD)'],
+      rows: warehouses
+          .map<List<String>>((w) => [
+                w['warehouse_name'] ?? '',
+                '${w['product_count']}',
+                '${w['total_quantity']}',
+                '${_fmtAmount(w['total_value'])} IQD',
+              ])
+          .toList(),
+    );
+
+    printReportHtml(title: 'Inventory Report', tableHtml: tableHtml);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final inventoryAsync = ref.watch(reportsInventoryProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader('Inventory', 'Warehouse Valuation', _kInventoryColor,
-              Icons.inventory_2_rounded),
+          _reportHeader('Inventory Report', () {
+            final data = inventoryAsync.valueOrNull ?? {};
+            _print(data);
+          }),
+          const SizedBox(height: 16),
+          _sectionTitle('Inventory Valuation'),
           const SizedBox(height: 12),
           inventoryAsync.when(
             data: (data) {
               final valuation = data['data'] as Map<String, dynamic>? ?? {};
-              final warehouses = valuation['warehouses'] as List? ?? [];
+              final warehouses = (valuation['warehouses'] as List?) ?? [];
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _TotalBanner(
-                      value: valuation['grand_total_value'],
-                      color: _kInventoryColor),
-                  const SizedBox(height: 16),
-                  _StyledTable(
-                    accentColor: _kInventoryColor,
-                    columns: const [
-                      'Warehouse',
-                      'Products',
-                      'Qty',
-                      'Value (IQD)'
-                    ],
-                    numericCols: const {1, 2, 3},
-                    boldCols: const {3},
-                    rows: warehouses
-                        .map((w) => [
-                              w['warehouse_name'] ?? '',
-                              '${w['product_count']}',
-                              '${w['total_quantity']}',
-                              _fmtAmount(w['total_value']),
-                            ])
-                        .toList(),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: AppColors.primary.withOpacity(0.2)),
+                    ),
+                    child: Row(children: [
+                      const Icon(Icons.inventory, color: AppColors.primary),
+                      const SizedBox(width: 12),
+                      Text(
+                          'Total Inventory Value: ${_fmtAmount(valuation['grand_total_value'])} IQD',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w700)),
+                    ]),
                   ),
+                  const SizedBox(height: 16),
+                  _buildContainer(isDark,
+                      child: DataTable(
+                        headingRowColor: WidgetStateProperty.all(isDark
+                            ? AppColors.darkBackground
+                            : AppColors.background),
+                        columns: const [
+                          DataColumn(
+                              label: Text('Warehouse',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600))),
+                          DataColumn(
+                              label: Text('Products',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                              numeric: true),
+                          DataColumn(
+                              label: Text('Total Qty',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                              numeric: true),
+                          DataColumn(
+                              label: Text('Value',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                              numeric: true),
+                        ],
+                        rows: warehouses
+                            .map<DataRow>((w) => DataRow(cells: [
+                                  DataCell(Text(w['warehouse_name'] ?? '',
+                                      style: const TextStyle(fontSize: 13))),
+                                  DataCell(Text('${w['product_count']}',
+                                      style: const TextStyle(fontSize: 13))),
+                                  DataCell(Text('${w['total_quantity']}',
+                                      style: const TextStyle(fontSize: 13))),
+                                  DataCell(Text(
+                                      '${_fmtAmount(w['total_value'])} IQD',
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600))),
+                                ]))
+                            .toList(),
+                      )),
                 ],
               );
             },
-            loading: () => const _LoadingIndicator(color: _kInventoryColor),
-            error: (e, _) => _ErrorText(e),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e'),
           ),
         ],
       ),
@@ -606,74 +734,178 @@ class _InventoryReportTab extends ConsumerWidget {
   }
 }
 
-// ─── Customer Tab ─────────────────────────────────────────────────────────────
+// ─── Customer Report Tab ─────────────────────────────────────────────────────
 class _CustomerReportTab extends ConsumerWidget {
   const _CustomerReportTab();
+
+  void _print(Map<String, dynamic> custData, Map<String, dynamic> suppData) {
+    final customers = (custData['data'] as List?) ?? [];
+    final suppliers = (suppData['data'] as List?) ?? [];
+
+    var tableHtml =
+        '<p style="font-size:14px;margin-bottom:10px;"><strong>Total Receivables: ${_fmtAmount(custData['total_receivable'])} IQD</strong></p>';
+    tableHtml += buildTableHtml(
+      sectionTitle: 'Customer Receivables',
+      headers: ['Customer', 'Balance (IQD)', 'Credit Limit (IQD)', 'Status'],
+      rows: customers
+          .map<List<String>>((c) => [
+                c['customer_name'] ?? '',
+                '${_fmtAmount(c['current_balance'])} IQD',
+                '${_fmtAmount(c['credit_limit'])} IQD',
+                c['over_limit'] == true ? 'OVER LIMIT' : 'OK',
+              ])
+          .toList(),
+    );
+
+    tableHtml +=
+        '<br><p style="font-size:14px;margin-bottom:10px;"><strong>Total Payables: ${_fmtAmount(suppData['total_payable'])} IQD</strong></p>';
+    tableHtml += buildTableHtml(
+      sectionTitle: 'Supplier Payables',
+      headers: ['Supplier', 'Balance (IQD)', 'Payment Terms (days)'],
+      rows: suppliers
+          .map<List<String>>((s) => [
+                s['supplier_name'] ?? '',
+                '${_fmtAmount(s['current_balance'])} IQD',
+                '${s['payment_terms']}',
+              ])
+          .toList(),
+    );
+
+    printReportHtml(title: 'Customer & Supplier Report', tableHtml: tableHtml);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customersAsync = ref.watch(reportsCustomerBalancesProvider);
     final suppliersAsync = ref.watch(reportsSupplierBalancesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader('Customers', 'Receivables', _kCustomerColor,
-              Icons.people_alt_rounded),
+          _reportHeader('Customer & Supplier Report', () {
+            final cust = customersAsync.valueOrNull ?? {};
+            final supp = suppliersAsync.valueOrNull ?? {};
+            _print(cust, supp);
+          }),
+          const SizedBox(height: 16),
+          _sectionTitle('Customer Receivables'),
           const SizedBox(height: 12),
           customersAsync.when(
             data: (data) {
-              final customers = data['data'] as List? ?? [];
-              if (customers.isEmpty)
-                return const _EmptyState(message: 'No receivables');
-              return _StyledTableCustom(
-                accentColor: _kCustomerColor,
-                columns: const [
-                  'Customer',
-                  'Balance (IQD)',
-                  'Credit Limit',
-                  'Status'
-                ],
-                rows: customers
-                    .map((c) => _CustomerRow(
-                          name: c['customer_name'] ?? '',
-                          balance: _fmtAmount(c['current_balance']),
-                          limit: _fmtAmount(c['credit_limit']),
-                          overLimit: c['over_limit'] == true,
-                        ))
-                    .toList(),
-              );
+              final customers = (data['data'] as List?) ?? [];
+              if (customers.isEmpty) return const Text('No receivables');
+              return _buildContainer(isDark,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(isDark
+                        ? AppColors.darkBackground
+                        : AppColors.background),
+                    columns: const [
+                      DataColumn(
+                          label: Text('Customer',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                      DataColumn(
+                          label: Text('Balance',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Credit Limit',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Status',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                    ],
+                    rows: customers
+                        .map<DataRow>((c) => DataRow(cells: [
+                              DataCell(Text(c['customer_name'] ?? '',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(
+                                  '${_fmtAmount(c['current_balance'])} IQD',
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600))),
+                              DataCell(Text(
+                                  '${_fmtAmount(c['credit_limit'])} IQD',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(c['over_limit'] == true
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                          color:
+                                              AppColors.error.withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(4)),
+                                      child: const Text('Over Limit',
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.error,
+                                              fontWeight: FontWeight.w600)))
+                                  : Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                          color: AppColors.success
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(4)),
+                                      child: const Text('OK',
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.success,
+                                              fontWeight: FontWeight.w600)))),
+                            ]))
+                        .toList(),
+                  ));
             },
-            loading: () => const _LoadingIndicator(color: _kCustomerColor),
-            error: (e, _) => _ErrorText(e),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e'),
           ),
           const SizedBox(height: 24),
-          _SectionHeader('Suppliers', 'Payables', _kCustomerColor,
-              Icons.local_shipping_rounded),
+          _sectionTitle('Supplier Payables'),
           const SizedBox(height: 12),
           suppliersAsync.when(
             data: (data) {
-              final suppliers = data['data'] as List? ?? [];
-              if (suppliers.isEmpty)
-                return const _EmptyState(message: 'No payables');
-              return _StyledTable(
-                accentColor: _kCustomerColor,
-                columns: const ['Supplier', 'Balance (IQD)', 'Terms (days)'],
-                numericCols: const {1, 2},
-                boldCols: const {1},
-                rows: suppliers
-                    .map((s) => [
-                          s['supplier_name'] ?? '',
-                          _fmtAmount(s['current_balance']),
-                          '${s['payment_terms']}',
-                        ])
-                    .toList(),
-              );
+              final suppliers = (data['data'] as List?) ?? [];
+              if (suppliers.isEmpty) return const Text('No payables');
+              return _buildContainer(isDark,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.all(isDark
+                        ? AppColors.darkBackground
+                        : AppColors.background),
+                    columns: const [
+                      DataColumn(
+                          label: Text('Supplier',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                      DataColumn(
+                          label: Text('Balance',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                      DataColumn(
+                          label: Text('Terms (days)',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          numeric: true),
+                    ],
+                    rows: suppliers
+                        .map<DataRow>((s) => DataRow(cells: [
+                              DataCell(Text(s['supplier_name'] ?? '',
+                                  style: const TextStyle(fontSize: 13))),
+                              DataCell(Text(
+                                  '${_fmtAmount(s['current_balance'])} IQD',
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600))),
+                              DataCell(Text('${s['payment_terms']}',
+                                  style: const TextStyle(fontSize: 13))),
+                            ]))
+                        .toList(),
+                  ));
             },
-            loading: () => const _LoadingIndicator(color: _kCustomerColor),
-            error: (e, _) => _ErrorText(e),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error: $e'),
           ),
         ],
       ),
@@ -681,350 +913,91 @@ class _CustomerReportTab extends ConsumerWidget {
   }
 }
 
-// ─── Reusable Widgets ─────────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title, this.subtitle, this.color, this.icon);
-  final String title, subtitle;
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(children: [
-      Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: color, size: 18),
-      ),
-      const SizedBox(width: 10),
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+Widget _reportHeader(String title, VoidCallback onPrint) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: AppColors.primary.withOpacity(0.03),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.description_outlined,
+            color: AppColors.primary, size: 20),
+        const SizedBox(width: 10),
         Text(title,
-            style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E))),
-        Text(subtitle,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
-      ]),
-    ]);
-  }
-}
-
-class _FlowBadge extends StatelessWidget {
-  const _FlowBadge(this.label, this.value, this.color);
-  final String label;
-  final dynamic value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.25)),
-      ),
-      child: Column(children: [
-        Text('${_fmtAmount(value)} IQD',
-            style: TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w800, color: color)),
-        Text(label,
-            style: TextStyle(
-                fontSize: 10,
-                color: color.withOpacity(0.7),
-                fontWeight: FontWeight.w600)),
-      ]),
-    );
-  }
-}
-
-class _TotalBanner extends StatelessWidget {
-  const _TotalBanner({required this.value, required this.color});
-  final dynamic value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-            colors: [color, color.withOpacity(0.75)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.inventory_2_rounded,
-              color: Colors.white, size: 22),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        const Spacer(),
+        ElevatedButton.icon(
+          onPressed: onPrint,
+          icon: const Icon(Icons.print, size: 16),
+          label: const Text('Print Report'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          ),
         ),
-        const SizedBox(width: 14),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Total Inventory Value',
-              style: TextStyle(fontSize: 12, color: Colors.white70)),
-          Text('${_fmtAmount(value)} IQD',
-              style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white)),
-        ]),
-      ]),
-    );
-  }
+      ],
+    ),
+  );
 }
 
-class _LoadingIndicator extends StatelessWidget {
-  const _LoadingIndicator({required this.color});
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: color, strokeWidth: 3),
-        ),
-      );
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message});
-  final String message;
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(children: [
-            Icon(Icons.inbox_rounded, size: 52, color: Colors.grey.shade300),
-            const SizedBox(height: 12),
-            Text(message,
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
-          ]),
-        ),
-      );
-}
-
-class _ErrorText extends StatelessWidget {
-  const _ErrorText(this.error);
-  final Object error;
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
+Widget _sectionTitle(String title) {
+  return Row(children: [
+    Container(
+        width: 4,
+        height: 20,
         decoration: BoxDecoration(
-          color: _kInventoryColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _kInventoryColor.withOpacity(0.3)),
-        ),
-        child: Row(children: [
-          Icon(Icons.error_outline_rounded, color: _kInventoryColor, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-              child: Text('Error: $error',
-                  style:
-                      const TextStyle(color: _kInventoryColor, fontSize: 13))),
-        ]),
-      );
+            color: AppColors.primary, borderRadius: BorderRadius.circular(2))),
+    const SizedBox(width: 10),
+    Text(title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+  ]);
 }
 
-// ─── Styled Table (generic) ───────────────────────────────────────────────────
-class _StyledTable extends StatelessWidget {
-  const _StyledTable({
-    required this.accentColor,
-    required this.columns,
-    required this.rows,
-    this.numericCols = const {},
-    this.boldCols = const {},
-    this.colorResolver,
-  });
-
-  final Color accentColor;
-  final List<String> columns;
-  final List<List<dynamic>> rows;
-  final Set<int> numericCols;
-  final Set<int> boldCols;
-  final Color? Function(int col, String val)? colorResolver;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: accentColor.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+Widget _buildContainer(bool isDark, {required Widget child}) {
+  return Container(
+    width: double.infinity,
+    decoration: BoxDecoration(
+      color: isDark ? AppColors.darkSurface : AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      border:
+          Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+    ),
+    child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
         child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor:
-                WidgetStateProperty.all(accentColor.withOpacity(0.08)),
-            dataRowColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected))
-                return accentColor.withOpacity(0.05);
-              return null;
-            }),
-            dividerThickness: 0.5,
-            columns: columns
-                .asMap()
-                .entries
-                .map((e) => DataColumn(
-                      label: Text(e.value,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                              color: accentColor)),
-                      numeric: numericCols.contains(e.key),
-                    ))
-                .toList(),
-            rows: rows
-                .map((row) => DataRow(
-                      cells: row.asMap().entries.map((e) {
-                        final str = e.value?.toString() ?? '';
-                        final color = colorResolver?.call(e.key, str);
-                        return DataCell(Text(str,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: boldCols.contains(e.key)
-                                  ? FontWeight.w700
-                                  : FontWeight.w400,
-                              color: color ?? const Color(0xFF333333),
-                            )));
-                      }).toList(),
-                    ))
-                .toList(),
-          ),
-        ),
-      ),
-    );
-  }
+            scrollDirection: Axis.horizontal, child: child)),
+  );
 }
 
-// ─── Customers Table (custom — has status badge) ──────────────────────────────
-class _CustomerRow {
-  const _CustomerRow(
-      {required this.name,
-      required this.balance,
-      required this.limit,
-      required this.overLimit});
-  final String name, balance, limit;
-  final bool overLimit;
-}
-
-class _StyledTableCustom extends StatelessWidget {
-  const _StyledTableCustom(
-      {required this.accentColor, required this.columns, required this.rows});
-  final Color accentColor;
-  final List<String> columns;
-  final List<_CustomerRow> rows;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: accentColor.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor:
-                WidgetStateProperty.all(accentColor.withOpacity(0.08)),
-            dividerThickness: 0.5,
-            columns: columns
-                .map((c) => DataColumn(
-                      label: Text(c,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                              color: accentColor)),
-                    ))
-                .toList(),
-            rows: rows
-                .map((r) => DataRow(cells: [
-                      DataCell(Text(r.name,
-                          style: const TextStyle(
-                              fontSize: 13, color: Color(0xFF333333)))),
-                      DataCell(Text(r.balance,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF333333)))),
-                      DataCell(Text(r.limit,
-                          style: const TextStyle(
-                              fontSize: 13, color: Color(0xFF666666)))),
-                      DataCell(_StatusChip(overLimit: r.overLimit)),
-                    ]))
-                .toList(),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.overLimit});
-  final bool overLimit;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = overLimit ? _kInventoryColor : _kFinanceColor;
-    final label = overLimit ? '⚠ Over Limit' : '✓ OK';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(20)),
-      child: Text(label,
+Widget _statBadge(String label, dynamic value, Color color) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+    decoration: BoxDecoration(
+        color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+    child: Column(children: [
+      Text(label, style: TextStyle(fontSize: 11, color: color)),
+      const SizedBox(height: 2),
+      Text('${_fmtAmount(value)} IQD',
           style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-    );
-  }
+              fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+    ]),
+  );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-double _parseNum(dynamic v) {
-  if (v == null) return 0;
-  if (v is num) return v.toDouble();
-  return double.tryParse(v.toString()) ?? 0;
+String _fmtAmount(dynamic v) {
+  if (v == null) return '0';
+  final num = double.tryParse(v.toString()) ?? 0;
+  if (num >= 1000000) return '${(num / 1000000).toStringAsFixed(1)}M';
+  if (num >= 1000) return '${(num / 1000).toStringAsFixed(0)}K';
+  return num.toStringAsFixed(0);
 }
 
-String _formatNum(double n) {
-  if (n >= 1_000_000) return '${(n / 1_000_000).toStringAsFixed(1)}M';
-  if (n >= 1_000) return '${(n / 1_000).toStringAsFixed(0)}K';
-  return n.toStringAsFixed(0);
+Color _profitColor(dynamic v) {
+  final num = double.tryParse(v?.toString() ?? '0') ?? 0;
+  return num >= 0 ? AppColors.success : AppColors.error;
 }
-
-String _fmtAmount(dynamic v) => _formatNum(_parseNum(v));
-
-Color _profitColor(dynamic v) =>
-    _parseNum(v) >= 0 ? AppColors.success : _kInventoryColor;
