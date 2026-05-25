@@ -58,7 +58,9 @@ class _SalesPageState extends ConsumerState<SalesPage> {
                 const SizedBox(height: 16),
                 _buildFilters(statusFilter, typeFilter, isDark),
                 const SizedBox(height: 16),
-                Expanded(child: _buildInvoiceList(filteredAsync, customerMap, isDark)),
+                Expanded(
+                    child:
+                        _buildInvoiceList(filteredAsync, customerMap, isDark)),
               ],
             ),
           ),
@@ -66,7 +68,8 @@ class _SalesPageState extends ConsumerState<SalesPage> {
         if (_selectedInvoice != null)
           SaleDetailDrawer(
             invoice: _selectedInvoice!,
-            customerName: customerMap[_selectedInvoice!.customerId] ?? 'Walk-in',
+            customerName:
+                customerMap[_selectedInvoice!.customerId] ?? 'Walk-in',
             onClose: () => setState(() => _selectedInvoice = null),
             onPaymentRecorded: () {
               ref.invalidate(salesProvider);
@@ -94,7 +97,10 @@ class _SalesPageState extends ConsumerState<SalesPage> {
               isDense: true,
               filled: true,
               fillColor: isDark ? AppColors.darkSurface : AppColors.surface,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border)),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                      color: isDark ? AppColors.darkBorder : AppColors.border)),
             ),
           ),
         ),
@@ -107,7 +113,8 @@ class _SalesPageState extends ConsumerState<SalesPage> {
           onPressed: _openAiDialog,
           icon: const Icon(Icons.smart_toy_outlined),
           tooltip: 'AI Sales Assistant',
-          style: IconButton.styleFrom(backgroundColor: AppColors.primary.withOpacity(0.1)),
+          style: IconButton.styleFrom(
+              backgroundColor: AppColors.primary.withOpacity(0.1)),
         ),
         IconButton(
           onPressed: () => ref.invalidate(salesProvider),
@@ -132,15 +139,40 @@ class _SalesPageState extends ConsumerState<SalesPage> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _KpiCard(icon: Icons.payments, label: 'Total Sales', value: _formatCurrency(kpis.totalSales), color: AppColors.primary, isDark: isDark),
+          _KpiCard(
+              icon: Icons.payments,
+              label: 'Total Sales',
+              value: _formatCurrency(kpis.totalSales),
+              color: AppColors.primary,
+              isDark: isDark),
           const SizedBox(width: 12),
-          _KpiCard(icon: Icons.receipt_long, label: 'Invoices', value: '${kpis.invoiceCount}', color: AppColors.info, isDark: isDark),
+          _KpiCard(
+              icon: Icons.receipt_long,
+              label: 'Invoices',
+              value: '${kpis.invoiceCount}',
+              color: AppColors.info,
+              isDark: isDark),
           const SizedBox(width: 12),
-          _KpiCard(icon: Icons.money, label: 'Cash', value: '${kpis.cashPercentage.toStringAsFixed(0)}%', color: AppColors.success, isDark: isDark),
+          _KpiCard(
+              icon: Icons.money,
+              label: 'Cash',
+              value: '${kpis.cashPercentage.toStringAsFixed(0)}%',
+              color: AppColors.success,
+              isDark: isDark),
           const SizedBox(width: 12),
-          _KpiCard(icon: Icons.credit_card, label: 'Credit', value: '${kpis.creditPercentage.toStringAsFixed(0)}%', color: AppColors.warning, isDark: isDark),
+          _KpiCard(
+              icon: Icons.credit_card,
+              label: 'Credit',
+              value: '${kpis.creditPercentage.toStringAsFixed(0)}%',
+              color: AppColors.warning,
+              isDark: isDark),
           const SizedBox(width: 12),
-          _KpiCard(icon: Icons.warning_amber, label: 'Unpaid', value: _formatCurrency(kpis.totalUnpaid), color: AppColors.error, isDark: isDark),
+          _KpiCard(
+              icon: Icons.warning_amber,
+              label: 'Unpaid',
+              value: _formatCurrency(kpis.totalUnpaid),
+              color: AppColors.error,
+              isDark: isDark),
         ],
       ),
     );
@@ -149,16 +181,24 @@ class _SalesPageState extends ConsumerState<SalesPage> {
   Widget _buildAiInsightPanel(bool isDark) {
     final kpis = ref.watch(salesKpisProvider);
     final insights = <String>[];
-    if (kpis.unpaidCount > 0) insights.add('${kpis.unpaidCount} unpaid invoices (${_formatCurrency(kpis.totalUnpaid)})');
-    if (kpis.creditPercentage > 50) insights.add('Credit sales above 50% — monitor exposure');
-    if (kpis.invoiceCount > 0 && kpis.totalSales > 0) insights.add('Average invoice: ${_formatCurrency(kpis.totalSales / kpis.invoiceCount)}');
+    if (kpis.unpaidCount > 0)
+      insights.add(
+          '${kpis.unpaidCount} unpaid invoices (${_formatCurrency(kpis.totalUnpaid)})');
+    if (kpis.creditPercentage > 50)
+      insights.add('Credit sales above 50% — monitor exposure');
+    if (kpis.invoiceCount > 0 && kpis.totalSales > 0)
+      insights.add(
+          'Average invoice: ${_formatCurrency(kpis.totalSales / kpis.invoiceCount)}');
 
     if (insights.isEmpty) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [AppColors.primary.withOpacity(0.05), AppColors.info.withOpacity(0.05)]),
+        gradient: LinearGradient(colors: [
+          AppColors.primary.withOpacity(0.05),
+          AppColors.info.withOpacity(0.05)
+        ]),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
@@ -170,55 +210,105 @@ class _SalesPageState extends ConsumerState<SalesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('AI Insights', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const Text('AI Insights',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 4),
                 ...insights.map((i) => Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(i, style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
-                )),
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(i,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary)),
+                    )),
               ],
             ),
           ),
-          TextButton(onPressed: _openAiDialog, child: const Text('Ask AI', style: TextStyle(fontSize: 12))),
+          TextButton(
+              onPressed: _openAiDialog,
+              child: const Text('Ask AI', style: TextStyle(fontSize: 12))),
         ],
       ),
     );
   }
 
-  Widget _buildFilters(PaymentStatusFilter statusFilter, InvoiceTypeFilter typeFilter, bool isDark) {
+  Widget _buildFilters(PaymentStatusFilter statusFilter,
+      InvoiceTypeFilter typeFilter, bool isDark) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
-        _FilterChip(label: 'All', selected: statusFilter == PaymentStatusFilter.all, onTap: () => ref.read(salesStatusFilterProvider.notifier).state = PaymentStatusFilter.all),
-        _FilterChip(label: 'Paid', selected: statusFilter == PaymentStatusFilter.paid, color: AppColors.success, onTap: () => ref.read(salesStatusFilterProvider.notifier).state = PaymentStatusFilter.paid),
-        _FilterChip(label: 'Partial', selected: statusFilter == PaymentStatusFilter.partial, color: AppColors.warning, onTap: () => ref.read(salesStatusFilterProvider.notifier).state = PaymentStatusFilter.partial),
-        _FilterChip(label: 'Unpaid', selected: statusFilter == PaymentStatusFilter.unpaid, color: AppColors.error, onTap: () => ref.read(salesStatusFilterProvider.notifier).state = PaymentStatusFilter.unpaid),
+        _FilterChip(
+            label: 'All',
+            selected: statusFilter == PaymentStatusFilter.all,
+            onTap: () => ref.read(salesStatusFilterProvider.notifier).state =
+                PaymentStatusFilter.all),
+        _FilterChip(
+            label: 'Paid',
+            selected: statusFilter == PaymentStatusFilter.paid,
+            color: AppColors.success,
+            onTap: () => ref.read(salesStatusFilterProvider.notifier).state =
+                PaymentStatusFilter.paid),
+        _FilterChip(
+            label: 'Partial',
+            selected: statusFilter == PaymentStatusFilter.partial,
+            color: AppColors.warning,
+            onTap: () => ref.read(salesStatusFilterProvider.notifier).state =
+                PaymentStatusFilter.partial),
+        _FilterChip(
+            label: 'Unpaid',
+            selected: statusFilter == PaymentStatusFilter.unpaid,
+            color: AppColors.error,
+            onTap: () => ref.read(salesStatusFilterProvider.notifier).state =
+                PaymentStatusFilter.unpaid),
         const SizedBox(width: 16),
-        _FilterChip(label: 'All Types', selected: typeFilter == InvoiceTypeFilter.all, onTap: () => ref.read(salesTypeFilterProvider.notifier).state = InvoiceTypeFilter.all),
-        _FilterChip(label: 'Cash', selected: typeFilter == InvoiceTypeFilter.cash, color: AppColors.success, onTap: () => ref.read(salesTypeFilterProvider.notifier).state = InvoiceTypeFilter.cash),
-        _FilterChip(label: 'Credit', selected: typeFilter == InvoiceTypeFilter.credit, color: AppColors.warning, onTap: () => ref.read(salesTypeFilterProvider.notifier).state = InvoiceTypeFilter.credit),
+        _FilterChip(
+            label: 'All Types',
+            selected: typeFilter == InvoiceTypeFilter.all,
+            onTap: () => ref.read(salesTypeFilterProvider.notifier).state =
+                InvoiceTypeFilter.all),
+        _FilterChip(
+            label: 'Cash',
+            selected: typeFilter == InvoiceTypeFilter.cash,
+            color: AppColors.success,
+            onTap: () => ref.read(salesTypeFilterProvider.notifier).state =
+                InvoiceTypeFilter.cash),
+        _FilterChip(
+            label: 'Credit',
+            selected: typeFilter == InvoiceTypeFilter.credit,
+            color: AppColors.warning,
+            onTap: () => ref.read(salesTypeFilterProvider.notifier).state =
+                InvoiceTypeFilter.credit),
       ],
     );
   }
 
-  Widget _buildInvoiceList(AsyncValue<List<SalesInvoiceModel>> filteredAsync, Map<int, String> customerMap, bool isDark) {
+  Widget _buildInvoiceList(AsyncValue<List<SalesInvoiceModel>> filteredAsync,
+      Map<int, String> customerMap, bool isDark) {
     return filteredAsync.when(
       loading: () => ListView.builder(
         itemCount: 6,
         padding: const EdgeInsets.all(0),
-        itemBuilder: (_, __) => const Padding(padding: EdgeInsets.only(bottom: 12), child: SkeletonLoader(height: 100)),
+        itemBuilder: (_, __) => const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: SkeletonLoader(height: 100)),
       ),
       error: (err, _) => Center(child: Text('Error loading sales: $err')),
       data: (invoices) {
         if (invoices.isEmpty) {
-          return const EmptyState(icon: Icons.receipt_long, title: 'No invoices found', description: 'Create your first sale to get started.');
+          return const EmptyState(
+              icon: Icons.receipt_long,
+              title: 'No invoices found',
+              description: 'Create your first sale to get started.');
         }
         return ListView.builder(
           itemCount: invoices.length,
           itemBuilder: (_, i) {
             final inv = invoices[i];
-            final customerName = customerMap[inv.customerId] ?? 'Walk-in Customer';
+            final customerName =
+                customerMap[inv.customerId] ?? 'Walk-in Customer';
             return _InvoiceCard(
               invoice: inv,
               customerName: customerName,
@@ -250,25 +340,48 @@ class _SalesPageState extends ConsumerState<SalesPage> {
 
   void _showAlerts() {
     final kpis = ref.read(salesKpisProvider);
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sales Alerts'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (kpis.unpaidCount > 0)
-              ListTile(leading: const Icon(Icons.error, color: AppColors.error), title: Text('${kpis.unpaidCount} unpaid invoices'), subtitle: Text(_formatCurrency(kpis.totalUnpaid))),
+              ListTile(
+                leading: const Icon(Icons.error, color: AppColors.error),
+                title: Text('${kpis.unpaidCount} unpaid invoices'),
+                subtitle: Text(_formatCurrency(kpis.totalUnpaid)),
+              ),
             if (kpis.partialCount > 0)
-              ListTile(leading: const Icon(Icons.warning, color: AppColors.warning), title: Text('${kpis.partialCount} partially paid')),
+              ListTile(
+                leading: const Icon(Icons.warning, color: AppColors.warning),
+                title: Text('${kpis.partialCount} partially paid'),
+              ),
             if (kpis.creditPercentage > 50)
-              ListTile(leading: const Icon(Icons.credit_card, color: AppColors.warning), title: const Text('High credit exposure'), subtitle: Text('${kpis.creditPercentage.toStringAsFixed(0)}% of sales are on credit')),
+              ListTile(
+                leading:
+                    const Icon(Icons.credit_card, color: AppColors.warning),
+                title: const Text('High credit exposure'),
+                subtitle: Text(
+                  '${kpis.creditPercentage.toStringAsFixed(0)}% of sales are on credit',
+                ),
+              ),
             if (kpis.unpaidCount == 0 && kpis.partialCount == 0)
-              const ListTile(leading: Icon(Icons.check_circle, color: AppColors.success), title: Text('All invoices are paid!')),
+              const ListTile(
+                leading: Icon(Icons.check_circle, color: AppColors.success),
+                title: Text('All invoices are paid!'),
+              ),
           ],
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
@@ -288,12 +401,14 @@ class _SalesPageState extends ConsumerState<SalesPage> {
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Payment Amount', prefixText: 'EGP '),
+              decoration: const InputDecoration(
+                  labelText: 'Payment Amount', prefixText: 'EGP '),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               final amount = double.tryParse(amountController.text);
@@ -308,11 +423,13 @@ class _SalesPageState extends ConsumerState<SalesPage> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 ref.invalidate(salesProvider);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment recorded successfully')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Payment recorded successfully')));
                 }
               } catch (e) {
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(ctx)
+                      .showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               }
             },
@@ -328,7 +445,8 @@ class _SalesPageState extends ConsumerState<SalesPage> {
       context: context,
       builder: (_) => _SalesAiDialog(
         ref: ref,
-        initialQuery: 'Tell me about invoice ${invoice.invoiceNumber} for customer $customerName. Total: ${invoice.totalAmount}, Status: ${invoice.paymentStatus}',
+        initialQuery:
+            'Tell me about invoice ${invoice.invoiceNumber} for customer $customerName. Total: ${invoice.totalAmount}, Status: ${invoice.paymentStatus}',
       ),
     );
   }
@@ -347,7 +465,12 @@ class _KpiCard extends StatelessWidget {
   final Color color;
   final bool isDark;
 
-  const _KpiCard({required this.icon, required this.label, required this.value, required this.color, required this.isDark});
+  const _KpiCard(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      required this.color,
+      required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -363,15 +486,24 @@ class _KpiCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8)),
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
-              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary)),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
         ],
@@ -386,7 +518,11 @@ class _FilterChip extends StatelessWidget {
   final Color? color;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.selected, this.color, required this.onTap});
+  const _FilterChip(
+      {required this.label,
+      required this.selected,
+      this.color,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -398,9 +534,14 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? chipColor.withOpacity(0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: selected ? chipColor : Colors.grey.withOpacity(0.3)),
+          border: Border.all(
+              color: selected ? chipColor : Colors.grey.withOpacity(0.3)),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: selected ? chipColor : null)),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected ? chipColor : null)),
       ),
     );
   }
@@ -427,8 +568,16 @@ class _InvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = invoice.isPaid ? AppColors.success : invoice.isPartial ? AppColors.warning : AppColors.error;
-    final statusLabel = invoice.isPaid ? 'Paid' : invoice.isPartial ? 'Partial' : 'Unpaid';
+    final statusColor = invoice.isPaid
+        ? AppColors.success
+        : invoice.isPartial
+            ? AppColors.warning
+            : AppColors.error;
+    final statusLabel = invoice.isPaid
+        ? 'Paid'
+        : invoice.isPartial
+            ? 'Partial'
+            : 'Unpaid';
 
     return GestureDetector(
       onTap: onTap,
@@ -440,7 +589,10 @@ class _InvoiceCard extends StatelessWidget {
               ? AppColors.primary.withOpacity(0.05)
               : (isDark ? AppColors.darkSurface : AppColors.surface),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isSelected ? AppColors.primary.withOpacity(0.4) : (isDark ? AppColors.darkBorder : AppColors.border)),
+          border: Border.all(
+              color: isSelected
+                  ? AppColors.primary.withOpacity(0.4)
+                  : (isDark ? AppColors.darkBorder : AppColors.border)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +602,9 @@ class _InvoiceCard extends StatelessWidget {
                 Container(
                   width: 4,
                   height: 40,
-                  decoration: BoxDecoration(color: statusColor, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -459,32 +613,59 @@ class _InvoiceCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(invoice.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                          Text(invoice.invoiceNumber,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 14)),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                            child: Text(statusLabel, style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10)),
+                            child: Text(statusLabel,
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: statusColor,
+                                    fontWeight: FontWeight.w600)),
                           ),
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                            child: Text(invoice.invoiceType.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                                color: Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10)),
+                            child: Text(invoice.invoiceType.toUpperCase(),
+                                style: const TextStyle(
+                                    fontSize: 10, fontWeight: FontWeight.w500)),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(customerName, style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                      Text(customerName,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary)),
                     ],
                   ),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('${double.tryParse(invoice.totalAmount)?.toStringAsFixed(0) ?? '0'} EGP', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(
+                        '${double.tryParse(invoice.totalAmount)?.toStringAsFixed(0) ?? '0'} EGP',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15)),
                     if (invoice.invoiceDate != null)
-                      Text(_formatDate(invoice.invoiceDate!), style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                      Text(_formatDate(invoice.invoiceDate!),
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary)),
                   ],
                 ),
               ],
@@ -498,7 +679,9 @@ class _InvoiceCard extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: invoice.total > 0 ? (invoice.paid / invoice.total).clamp(0.0, 1.0) : 0,
+                        value: invoice.total > 0
+                            ? (invoice.paid / invoice.total).clamp(0.0, 1.0)
+                            : 0,
                         backgroundColor: Colors.grey.withOpacity(0.15),
                         color: statusColor,
                         minHeight: 4,
@@ -506,7 +689,13 @@ class _InvoiceCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text('${invoice.paid.toStringAsFixed(0)} / ${invoice.total.toStringAsFixed(0)}', style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                  Text(
+                      '${invoice.paid.toStringAsFixed(0)} / ${invoice.total.toStringAsFixed(0)}',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary)),
                 ],
               ),
             ],
@@ -516,9 +705,16 @@ class _InvoiceCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 _ActionBtn(icon: Icons.visibility, label: 'View', onTap: onTap),
                 const SizedBox(width: 8),
-                if (!invoice.isPaid) _ActionBtn(icon: Icons.payment, label: 'Pay', onTap: onRecordPayment),
+                if (!invoice.isPaid)
+                  _ActionBtn(
+                      icon: Icons.payment,
+                      label: 'Pay',
+                      onTap: onRecordPayment),
                 if (!invoice.isPaid) const SizedBox(width: 8),
-                _ActionBtn(icon: Icons.smart_toy_outlined, label: 'AI', onTap: onAskAi),
+                _ActionBtn(
+                    icon: Icons.smart_toy_outlined,
+                    label: 'AI',
+                    onTap: onAskAi),
               ],
             ),
           ],
@@ -542,7 +738,8 @@ class _ActionBtn extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _ActionBtn({required this.icon, required this.label, required this.onTap});
+  const _ActionBtn(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -551,13 +748,17 @@ class _ActionBtn extends StatelessWidget {
       borderRadius: BorderRadius.circular(6),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.grey.withOpacity(0.3))),
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.grey.withOpacity(0.3))),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 14, color: AppColors.primary),
             const SizedBox(width: 4),
-            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+            Text(label,
+                style:
+                    const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -607,7 +808,10 @@ class _SalesAiDialogState extends State<_SalesAiDialog> {
   Future<void> _send() async {
     final query = _controller.text.trim();
     if (query.isEmpty) return;
-    setState(() { _loading = true; _response = null; });
+    setState(() {
+      _loading = true;
+      _response = null;
+    });
     try {
       final repo = widget.ref.read(salesRepositoryProvider);
       final resp = await repo.aiChat(query);
@@ -635,9 +839,13 @@ class _SalesAiDialogState extends State<_SalesAiDialog> {
               children: [
                 const Icon(Icons.smart_toy, color: AppColors.primary),
                 const SizedBox(width: 8),
-                const Text('AI Sales Assistant', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Text('AI Sales Assistant',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 const Spacer(),
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close)),
               ],
             ),
             const SizedBox(height: 16),
@@ -645,7 +853,9 @@ class _SalesAiDialogState extends State<_SalesAiDialog> {
               controller: _controller,
               decoration: InputDecoration(
                 hintText: 'Ask about sales...',
-                suffixIcon: IconButton(onPressed: _loading ? null : _send, icon: const Icon(Icons.send)),
+                suffixIcon: IconButton(
+                    onPressed: _loading ? null : _send,
+                    icon: const Icon(Icons.send)),
               ),
               onSubmitted: (_) => _send(),
             ),
@@ -653,10 +863,15 @@ class _SalesAiDialogState extends State<_SalesAiDialog> {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: _suggestions.map((s) => ActionChip(
-                label: Text(s, style: const TextStyle(fontSize: 11)),
-                onPressed: () { _controller.text = s; _send(); },
-              )).toList(),
+              children: _suggestions
+                  .map((s) => ActionChip(
+                        label: Text(s, style: const TextStyle(fontSize: 11)),
+                        onPressed: () {
+                          _controller.text = s;
+                          _send();
+                        },
+                      ))
+                  .toList(),
             ),
             if (_loading) ...[
               const SizedBox(height: 20),
@@ -672,7 +887,9 @@ class _SalesAiDialogState extends State<_SalesAiDialog> {
                     color: AppColors.primary.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: SingleChildScrollView(child: SelectableText(_response!, style: const TextStyle(fontSize: 13))),
+                  child: SingleChildScrollView(
+                      child: SelectableText(_response!,
+                          style: const TextStyle(fontSize: 13))),
                 ),
               ),
             ],
