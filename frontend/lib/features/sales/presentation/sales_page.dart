@@ -26,6 +26,16 @@ class _SalesPageState extends ConsumerState<SalesPage> {
     super.dispose();
   }
 
+  void _refreshAfterOperation() {
+    ref.invalidate(salesProvider);
+    if (_selectedInvoice != null) {
+      final repo = ref.read(salesRepositoryProvider);
+      repo.getById(_selectedInvoice!.invoiceId).then((updated) {
+        if (mounted) setState(() => _selectedInvoice = updated);
+      }).catchError((_) {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -67,14 +77,12 @@ class _SalesPageState extends ConsumerState<SalesPage> {
         ),
         if (_selectedInvoice != null)
           SaleDetailDrawer(
+            key: ValueKey(_selectedInvoice!.invoiceId),
             invoice: _selectedInvoice!,
             customerName:
                 customerMap[_selectedInvoice!.customerId] ?? 'Walk-in',
             onClose: () => setState(() => _selectedInvoice = null),
-            onPaymentRecorded: () {
-              ref.invalidate(salesProvider);
-              setState(() => _selectedInvoice = null);
-            },
+            onPaymentRecorded: _refreshAfterOperation,
           ),
       ],
     );
@@ -340,10 +348,9 @@ class _SalesPageState extends ConsumerState<SalesPage> {
 
   void _showAlerts() {
     final kpis = ref.read(salesKpisProvider);
-
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Sales Alerts'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -351,36 +358,30 @@ class _SalesPageState extends ConsumerState<SalesPage> {
           children: [
             if (kpis.unpaidCount > 0)
               ListTile(
-                leading: const Icon(Icons.error, color: AppColors.error),
-                title: Text('${kpis.unpaidCount} unpaid invoices'),
-                subtitle: Text(_formatCurrency(kpis.totalUnpaid)),
-              ),
+                  leading: const Icon(Icons.error, color: AppColors.error),
+                  title: Text('${kpis.unpaidCount} unpaid invoices'),
+                  subtitle: Text(_formatCurrency(kpis.totalUnpaid))),
             if (kpis.partialCount > 0)
               ListTile(
-                leading: const Icon(Icons.warning, color: AppColors.warning),
-                title: Text('${kpis.partialCount} partially paid'),
-              ),
+                  leading: const Icon(Icons.warning, color: AppColors.warning),
+                  title: Text('${kpis.partialCount} partially paid')),
             if (kpis.creditPercentage > 50)
               ListTile(
-                leading:
-                    const Icon(Icons.credit_card, color: AppColors.warning),
-                title: const Text('High credit exposure'),
-                subtitle: Text(
-                  '${kpis.creditPercentage.toStringAsFixed(0)}% of sales are on credit',
-                ),
-              ),
+                  leading:
+                      const Icon(Icons.credit_card, color: AppColors.warning),
+                  title: const Text('High credit exposure'),
+                  subtitle: Text(
+                      '${kpis.creditPercentage.toStringAsFixed(0)}% of sales are on credit')),
             if (kpis.unpaidCount == 0 && kpis.partialCount == 0)
               const ListTile(
-                leading: Icon(Icons.check_circle, color: AppColors.success),
-                title: Text('All invoices are paid!'),
-              ),
+                  leading: Icon(Icons.check_circle, color: AppColors.success),
+                  title: Text('All invoices are paid!')),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Close'),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'))
         ],
       ),
     );
@@ -421,7 +422,7 @@ class _SalesPageState extends ConsumerState<SalesPage> {
                   amount: amount,
                 );
                 if (ctx.mounted) Navigator.pop(ctx);
-                ref.invalidate(salesProvider);
+                _refreshAfterOperation();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('Payment recorded successfully')));
