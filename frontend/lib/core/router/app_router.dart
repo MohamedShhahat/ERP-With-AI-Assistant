@@ -15,6 +15,7 @@ import '../../features/opening_balances/presentation/opening_balances_page.dart'
 import '../../features/reports/presentation/reports_page.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/ai_assistant/presentation/ai_assistant_page.dart';
+import '../../features/ai_assistant/presentation/voice_chat_page.dart';
 import '../../shared/layouts/app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -37,16 +38,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/', builder: (_, __) => const DashboardPage()),
           GoRoute(path: '/products', builder: (_, __) => const ProductsPage()),
-          GoRoute(path: '/customers', builder: (_, __) => const CustomersPage()),
-          GoRoute(path: '/suppliers', builder: (_, __) => const SuppliersPage()),
+          GoRoute(
+              path: '/customers', builder: (_, __) => const CustomersPage()),
+          GoRoute(
+              path: '/suppliers', builder: (_, __) => const SuppliersPage()),
           GoRoute(path: '/sales', builder: (_, __) => const SalesPage()),
-          GoRoute(path: '/purchases', builder: (_, __) => const PurchasesPage()),
-          GoRoute(path: '/inventory', builder: (_, __) => const InventoryPage()),
+          GoRoute(
+              path: '/purchases', builder: (_, __) => const PurchasesPage()),
+          GoRoute(
+              path: '/inventory', builder: (_, __) => const InventoryPage()),
           GoRoute(path: '/expenses', builder: (_, __) => const ExpensesPage()),
-          GoRoute(path: '/opening-balances', builder: (_, __) => const OpeningBalancesPage()),
+          GoRoute(
+              path: '/opening-balances',
+              builder: (_, __) => const OpeningBalancesPage()),
           GoRoute(path: '/reports', builder: (_, __) => const ReportsPage()),
-          GoRoute(path: '/notifications', builder: (_, __) => const NotificationsPage()),
+          GoRoute(
+              path: '/notifications',
+              builder: (_, __) => const NotificationsPage()),
           GoRoute(path: '/ai', builder: (_, __) => const AIAssistantPage()),
+          GoRoute(path: '/voice-ai', builder: (_, __) => const VoiceChatPage()),
         ],
       ),
     ],
