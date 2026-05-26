@@ -854,6 +854,7 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
             );
             if (ctx.mounted) Navigator.pop(ctx);
             widget.onPaymentRecorded();
+            _loadData();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Return processed successfully')),
