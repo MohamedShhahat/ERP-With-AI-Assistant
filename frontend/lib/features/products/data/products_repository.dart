@@ -98,13 +98,18 @@ class StockInfo {
   final double quantity;
   final double avgCost;
 
-  StockInfo({required this.productId, required this.warehouseId, required this.quantity, required this.avgCost});
+  StockInfo(
+      {required this.productId,
+      required this.warehouseId,
+      required this.quantity,
+      required this.avgCost});
 
   factory StockInfo.fromJson(Map<String, dynamic> json) {
     return StockInfo(
       productId: json['product_id'],
       warehouseId: json['warehouse_id'],
-      quantity: double.tryParse(json['cached_quantity']?.toString() ?? '0') ?? 0,
+      quantity:
+          double.tryParse(json['cached_quantity']?.toString() ?? '0') ?? 0,
       avgCost: double.tryParse(json['cached_avg_cost']?.toString() ?? '0') ?? 0,
     );
   }
@@ -115,7 +120,8 @@ class CategoryModel {
   final String categoryName;
   final String? description;
 
-  CategoryModel({required this.categoryId, required this.categoryName, this.description});
+  CategoryModel(
+      {required this.categoryId, required this.categoryName, this.description});
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
@@ -131,8 +137,11 @@ class ProductsRepository {
   ProductsRepository(this._dio);
 
   Future<List<ProductModel>> getAll({bool activeOnly = false}) async {
-    final response = await _dio.get('/products', queryParameters: {'active_only': activeOnly});
-    return (response.data as List).map((e) => ProductModel.fromJson(e)).toList();
+    final response = await _dio
+        .get('/products', queryParameters: {'active_only': activeOnly});
+    return (response.data as List)
+        .map((e) => ProductModel.fromJson(e))
+        .toList();
   }
 
   Future<ProductModel> getById(int id) async {
@@ -152,11 +161,15 @@ class ProductsRepository {
 
   Future<List<UnitConversionModel>> getConversions(int productId) async {
     final response = await _dio.get('/products/$productId/conversions');
-    return (response.data as List).map((e) => UnitConversionModel.fromJson(e)).toList();
+    return (response.data as List)
+        .map((e) => UnitConversionModel.fromJson(e))
+        .toList();
   }
 
-  Future<UnitConversionModel> addConversion(int productId, Map<String, dynamic> data) async {
-    final response = await _dio.post('/products/$productId/conversions', data: data);
+  Future<UnitConversionModel> addConversion(
+      int productId, Map<String, dynamic> data) async {
+    final response =
+        await _dio.post('/products/$productId/conversions', data: data);
     return UnitConversionModel.fromJson(response.data);
   }
 
@@ -176,12 +189,32 @@ class ProductsRepository {
 
   Future<List<CategoryModel>> getCategories() async {
     final response = await _dio.get('/categories');
-    return (response.data as List).map((e) => CategoryModel.fromJson(e)).toList();
+    return (response.data as List)
+        .map((e) => CategoryModel.fromJson(e))
+        .toList();
   }
 
   Future<Map<String, dynamic>> getDemandForecast(int productId) async {
     final response = await _dio.get('/ai/predict/demand/$productId');
     return response.data as Map<String, dynamic>;
+  }
+
+  Future<void> adjustStock({
+    required int productId,
+    required int warehouseId,
+    required double quantity,
+    required String unitType,
+    required double costPerUnit,
+    required String transactionType,
+  }) async {
+    await _dio.post('/inventory/transactions', data: {
+      'product_id': productId,
+      'warehouse_id': warehouseId,
+      'quantity': quantity,
+      'unit_type': unitType,
+      'cost_per_unit': costPerUnit,
+      'transaction_type': transactionType,
+    });
   }
 
   Future<Map<String, dynamic>> aiChat(String message) async {

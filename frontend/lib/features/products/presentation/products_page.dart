@@ -29,7 +29,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   }
 
   void _showEditDialog(ProductModel product) {
-    showDialog(context: context, builder: (_) => ProductFormDialog(product: product));
+    showDialog(
+        context: context, builder: (_) => ProductFormDialog(product: product));
   }
 
   void _openDetail(ProductModel product) {
@@ -44,6 +45,83 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     showDialog(
       context: context,
       builder: (ctx) => _AiQueryDialog(ref: ref),
+    );
+  }
+
+  void _showLowStockAlerts() {
+    final stockAsync = ref.read(stockProvider);
+    final productsAsync = ref.read(filteredProductsProvider);
+
+    final lowStockItems = <Map<String, dynamic>>[];
+    if (stockAsync is AsyncData<List<StockInfo>> &&
+        productsAsync is AsyncData<List<ProductModel>>) {
+      final products = productsAsync.value!;
+      final stocks = stockAsync.value!;
+
+      for (final product in products) {
+        final productStocks =
+            stocks.where((s) => s.productId == product.productId).toList();
+        final totalQty =
+            productStocks.fold<double>(0, (sum, s) => sum + s.quantity);
+        if (totalQty <= 10) {
+          lowStockItems.add({'product': product, 'quantity': totalQty});
+        }
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber, color: AppColors.warning, size: 22),
+            const SizedBox(width: 8),
+            Text('Low Stock Alerts (${lowStockItems.length})'),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          height: 400,
+          child: lowStockItems.isEmpty
+              ? const Center(
+                  child: Text('All products are well stocked!',
+                      style: TextStyle(color: AppColors.textSecondary)))
+              : ListView.separated(
+                  itemCount: lowStockItems.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final item = lowStockItems[i];
+                    final product = item['product'] as ProductModel;
+                    final qty = item['quantity'] as double;
+                    final isOut = qty <= 0;
+                    return ListTile(
+                      leading: Icon(
+                        isOut ? Icons.error : Icons.warning_amber,
+                        color: isOut ? AppColors.error : AppColors.warning,
+                      ),
+                      title: Text(product.productName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w500, fontSize: 14)),
+                      subtitle: Text(
+                        isOut
+                            ? 'OUT OF STOCK'
+                            : '${qty.toStringAsFixed(1)} ${product.baseUnit} remaining',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: isOut ? AppColors.error : AppColors.warning),
+                      ),
+                      trailing: Text('EGP ${product.sellingPrice}',
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.textSecondary)),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+        ],
+      ),
     );
   }
 
@@ -74,10 +152,13 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                         decoration: InputDecoration(
                           hintText: 'Search by name, code, or barcode...',
                           prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v,
+                        onChanged: (v) =>
+                            ref.read(searchQueryProvider.notifier).state = v,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -91,11 +172,12 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                       onPressed: _showAiDialog,
                       icon: const Icon(Icons.smart_toy),
                       tooltip: 'Ask AI',
-                      style: IconButton.styleFrom(backgroundColor: AppColors.primary.withOpacity(0.1)),
+                      style: IconButton.styleFrom(
+                          backgroundColor: AppColors.primary.withOpacity(0.1)),
                     ),
                     const SizedBox(width: 8),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () => _showLowStockAlerts(),
                       icon: const Icon(Icons.notifications_outlined),
                       tooltip: 'Low stock alerts',
                     ),
@@ -106,13 +188,25 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 // KPI Row
                 Row(
                   children: [
-                    _KpiChip(icon: Icons.inventory_2, label: '${kpis['total']} Products', color: AppColors.primary),
+                    _KpiChip(
+                        icon: Icons.inventory_2,
+                        label: '${kpis['total']} Products',
+                        color: AppColors.primary),
                     const SizedBox(width: 12),
-                    _KpiChip(icon: Icons.check_circle, label: '${kpis['active']} Active', color: AppColors.success),
+                    _KpiChip(
+                        icon: Icons.check_circle,
+                        label: '${kpis['active']} Active',
+                        color: AppColors.success),
                     const SizedBox(width: 12),
-                    _KpiChip(icon: Icons.warning_amber, label: '${kpis['lowStock']} Low Stock', color: AppColors.warning),
+                    _KpiChip(
+                        icon: Icons.warning_amber,
+                        label: '${kpis['lowStock']} Low Stock',
+                        color: AppColors.warning),
                     const SizedBox(width: 12),
-                    _KpiChip(icon: Icons.error_outline, label: '${kpis['outOfStock']} Out of Stock', color: AppColors.error),
+                    _KpiChip(
+                        icon: Icons.error_outline,
+                        label: '${kpis['outOfStock']} Out of Stock',
+                        color: AppColors.error),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -131,26 +225,56 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Category',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
                           ),
                           items: [
-                            const DropdownMenuItem(value: null, child: Text('All')),
-                            ...categories.map((c) => DropdownMenuItem(value: c.categoryId, child: Text(c.categoryName))),
+                            const DropdownMenuItem(
+                                value: null, child: Text('All')),
+                            ...categories.map((c) => DropdownMenuItem(
+                                value: c.categoryId,
+                                child: Text(c.categoryName))),
                           ],
-                          onChanged: (v) => ref.read(selectedCategoryProvider.notifier).state = v,
+                          onChanged: (v) => ref
+                              .read(selectedCategoryProvider.notifier)
+                              .state = v,
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     // Stock filter chips
-                    _FilterChip(label: 'All', selected: stockFilter == StockFilter.all, onTap: () => ref.read(stockFilterProvider.notifier).state = StockFilter.all),
+                    _FilterChip(
+                        label: 'All',
+                        selected: stockFilter == StockFilter.all,
+                        onTap: () => ref
+                            .read(stockFilterProvider.notifier)
+                            .state = StockFilter.all),
                     const SizedBox(width: 8),
-                    _FilterChip(label: 'In Stock', selected: stockFilter == StockFilter.inStock, color: AppColors.success, onTap: () => ref.read(stockFilterProvider.notifier).state = StockFilter.inStock),
+                    _FilterChip(
+                        label: 'In Stock',
+                        selected: stockFilter == StockFilter.inStock,
+                        color: AppColors.success,
+                        onTap: () => ref
+                            .read(stockFilterProvider.notifier)
+                            .state = StockFilter.inStock),
                     const SizedBox(width: 8),
-                    _FilterChip(label: 'Low Stock', selected: stockFilter == StockFilter.lowStock, color: AppColors.warning, onTap: () => ref.read(stockFilterProvider.notifier).state = StockFilter.lowStock),
+                    _FilterChip(
+                        label: 'Low Stock',
+                        selected: stockFilter == StockFilter.lowStock,
+                        color: AppColors.warning,
+                        onTap: () => ref
+                            .read(stockFilterProvider.notifier)
+                            .state = StockFilter.lowStock),
                     const SizedBox(width: 8),
-                    _FilterChip(label: 'Out of Stock', selected: stockFilter == StockFilter.outOfStock, color: AppColors.error, onTap: () => ref.read(stockFilterProvider.notifier).state = StockFilter.outOfStock),
+                    _FilterChip(
+                        label: 'Out of Stock',
+                        selected: stockFilter == StockFilter.outOfStock,
+                        color: AppColors.error,
+                        onTap: () => ref
+                            .read(stockFilterProvider.notifier)
+                            .state = StockFilter.outOfStock),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -161,13 +285,17 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+                      border: Border.all(
+                          color:
+                              isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                     child: filteredAsync.when(
                       loading: () => ListView.builder(
                         itemCount: 6,
                         padding: const EdgeInsets.all(16),
-                        itemBuilder: (_, __) => const Padding(padding: EdgeInsets.only(bottom: 12), child: SkeletonLoader(height: 72)),
+                        itemBuilder: (_, __) => const Padding(
+                            padding: EdgeInsets.only(bottom: 12),
+                            child: SkeletonLoader(height: 72)),
                       ),
                       error: (err, _) => Center(child: Text('Error: $err')),
                       data: (products) {
@@ -176,9 +304,18 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.inventory_2, size: 64, color: isDark ? AppColors.darkTextSecondary : AppColors.textTertiary),
+                                Icon(Icons.inventory_2,
+                                    size: 64,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.textTertiary),
                                 const SizedBox(height: 16),
-                                Text('No products found', style: TextStyle(fontSize: 18, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                                Text('No products found',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        color: isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.textSecondary)),
                               ],
                             ),
                           );
@@ -186,17 +323,23 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                         return ListView.separated(
                           padding: const EdgeInsets.all(16),
                           itemCount: products.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
                           itemBuilder: (_, i) {
                             final p = products[i];
-                            final stockData = stockAsync is AsyncData<List<StockInfo>>
-                                ? stockAsync.value!.where((s) => s.productId == p.productId).toList()
+                            final stockData = stockAsync
+                                    is AsyncData<List<StockInfo>>
+                                ? stockAsync.value!
+                                    .where((s) => s.productId == p.productId)
+                                    .toList()
                                 : <StockInfo>[];
-                            final totalStock = stockData.fold<double>(0, (sum, s) => sum + s.quantity);
+                            final totalStock = stockData.fold<double>(
+                                0, (sum, s) => sum + s.quantity);
                             return _ProductCard(
                               product: p,
                               totalStock: totalStock,
-                              isSelected: _selectedProduct?.productId == p.productId,
+                              isSelected:
+                                  _selectedProduct?.productId == p.productId,
                               isDark: isDark,
                               onTap: () => _openDetail(p),
                               onEdit: () => _showEditDialog(p),
@@ -230,7 +373,8 @@ class _KpiChip extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _KpiChip({required this.icon, required this.label, required this.color});
+  const _KpiChip(
+      {required this.icon, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +390,9 @@ class _KpiChip extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 13)),
+          Text(label,
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, color: color, fontSize: 13)),
         ],
       ),
     );
@@ -260,7 +406,11 @@ class _FilterChip extends StatelessWidget {
   final Color? color;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.selected, this.color, required this.onTap});
+  const _FilterChip(
+      {required this.label,
+      required this.selected,
+      this.color,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -269,16 +419,22 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? (color ?? AppColors.primary).withOpacity(0.12) : Colors.transparent,
+          color: selected
+              ? (color ?? AppColors.primary).withOpacity(0.12)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? (color ?? AppColors.primary) : AppColors.border),
+          border: Border.all(
+              color:
+                  selected ? (color ?? AppColors.primary) : AppColors.border),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 13,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? (color ?? AppColors.primary) : AppColors.textSecondary,
+            color: selected
+                ? (color ?? AppColors.primary)
+                : AppColors.textSecondary,
           ),
         ),
       ),
@@ -295,7 +451,13 @@ class _ProductCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
 
-  const _ProductCard({required this.product, required this.totalStock, required this.isSelected, required this.isDark, required this.onTap, required this.onEdit});
+  const _ProductCard(
+      {required this.product,
+      required this.totalStock,
+      required this.isSelected,
+      required this.isDark,
+      required this.onTap,
+      required this.onEdit});
 
   Color get _stockColor {
     if (totalStock <= 0) return AppColors.error;
@@ -322,7 +484,9 @@ class _ProductCard extends StatelessWidget {
               : (isDark ? AppColors.darkSurface : AppColors.surface),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border),
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? AppColors.darkBorder : AppColors.border),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -330,12 +494,14 @@ class _ProductCard extends StatelessWidget {
           children: [
             // Product icon/image placeholder
             Container(
-              width: 48, height: 48,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.image, color: AppColors.primary, size: 24),
+              child:
+                  const Icon(Icons.image, color: AppColors.primary, size: 24),
             ),
             const SizedBox(width: 14),
             // Name + unit
@@ -344,11 +510,17 @@ class _ProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.productName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text(product.productName,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
                   const SizedBox(height: 4),
                   Text(
                     '${product.baseUnit}${product.barcode != null ? ' | ${product.barcode}' : ''}',
-                    style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -358,16 +530,23 @@ class _ProductCard extends StatelessWidget {
               width: 100,
               child: Column(
                 children: [
-                  Text('${totalStock.toStringAsFixed(1)} ${product.baseUnit == 'meter' ? 'm' : 'pcs'}',
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  Text(
+                      '${totalStock.toStringAsFixed(1)} ${product.baseUnit == 'meter' ? 'm' : 'pcs'}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 13)),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: _stockColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text(_stockLabel, style: TextStyle(fontSize: 11, color: _stockColor, fontWeight: FontWeight.w500)),
+                    child: Text(_stockLabel,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: _stockColor,
+                            fontWeight: FontWeight.w500)),
                   ),
                 ],
               ),
@@ -379,16 +558,26 @@ class _ProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('\$${product.sellingPrice}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  Text('\$${product.sellingPrice}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 14)),
                   const SizedBox(height: 4),
-                  Text('Cost: \$${product.purchaseCost} | ${product.profitMargin.toStringAsFixed(0)}%',
-                      style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                  Text(
+                      'Cost: \$${product.purchaseCost} | ${product.profitMargin.toStringAsFixed(0)}%',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary)),
                 ],
               ),
             ),
             const SizedBox(width: 12),
             // Actions
-            IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: onEdit, tooltip: 'Edit'),
+            IconButton(
+                icon: const Icon(Icons.edit, size: 18),
+                onPressed: onEdit,
+                tooltip: 'Edit'),
           ],
         ),
       ),
@@ -418,11 +607,15 @@ class _AiQueryDialogState extends State<_AiQueryDialog> {
   ];
 
   Future<void> _ask(String question) async {
-    setState(() { _loading = true; _response = null; });
+    setState(() {
+      _loading = true;
+      _response = null;
+    });
     try {
       final repo = widget.ref.read(productsRepositoryProvider);
       final result = await repo.aiChat(question);
-      setState(() => _response = result['response']?.toString() ?? 'No response');
+      setState(
+          () => _response = result['response']?.toString() ?? 'No response');
     } catch (e) {
       setState(() => _response = 'Error: $e');
     } finally {
@@ -433,21 +626,32 @@ class _AiQueryDialogState extends State<_AiQueryDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(children: [Icon(Icons.smart_toy, color: AppColors.primary), SizedBox(width: 8), Text('AI Assistant')]),
+      title: const Row(children: [
+        Icon(Icons.smart_toy, color: AppColors.primary),
+        SizedBox(width: 8),
+        Text('AI Assistant')
+      ]),
       content: SizedBox(
         width: 500,
         height: 400,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Quick questions:', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text('Quick questions:',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 8),
             Wrap(
-              spacing: 8, runSpacing: 8,
-              children: _suggestions.map((q) => ActionChip(
-                label: Text(q, style: const TextStyle(fontSize: 12)),
-                onPressed: () { _controller.text = q; _ask(q); },
-              )).toList(),
+              spacing: 8,
+              runSpacing: 8,
+              children: _suggestions
+                  .map((q) => ActionChip(
+                        label: Text(q, style: const TextStyle(fontSize: 12)),
+                        onPressed: () {
+                          _controller.text = q;
+                          _ask(q);
+                        },
+                      ))
+                  .toList(),
             ),
             const SizedBox(height: 16),
             Row(
@@ -455,12 +659,16 @@ class _AiQueryDialogState extends State<_AiQueryDialog> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(hintText: 'Ask about products...', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                        hintText: 'Ask about products...',
+                        border: OutlineInputBorder()),
                     onSubmitted: _ask,
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(onPressed: () => _ask(_controller.text), icon: const Icon(Icons.send, color: AppColors.primary)),
+                IconButton(
+                    onPressed: () => _ask(_controller.text),
+                    icon: const Icon(Icons.send, color: AppColors.primary)),
               ],
             ),
             const SizedBox(height: 16),
@@ -471,16 +679,26 @@ class _AiQueryDialogState extends State<_AiQueryDialog> {
                       ? SingleChildScrollView(
                           child: Container(
                             padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.04), borderRadius: BorderRadius.circular(8)),
-                            child: SelectableText(_response!, style: const TextStyle(fontSize: 13, height: 1.5)),
+                            decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.04),
+                                borderRadius: BorderRadius.circular(8)),
+                            child: SelectableText(_response!,
+                                style:
+                                    const TextStyle(fontSize: 13, height: 1.5)),
                           ),
                         )
-                      : Center(child: Text('Ask me anything about your products!', style: TextStyle(color: AppColors.textSecondary))),
+                      : Center(
+                          child: Text('Ask me anything about your products!',
+                              style:
+                                  TextStyle(color: AppColors.textSecondary))),
             ),
           ],
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: const Text('Close'))
+      ],
     );
   }
 }
