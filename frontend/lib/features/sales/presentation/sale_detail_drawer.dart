@@ -45,6 +45,16 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant SaleDetailDrawer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.invoice.invoiceId != widget.invoice.invoiceId ||
+        oldWidget.invoice.totalAmount != widget.invoice.totalAmount ||
+        oldWidget.invoice.paymentStatus != widget.invoice.paymentStatus) {
+      _loadData();
+    }
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _paymentsLoading = true;
@@ -838,10 +848,18 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
       return;
     }
 
+    final returnableItems =
+        _items.where((item) => item.returnableQuantity > 0).toList();
+    if (returnableItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('All items have already been returned')));
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => _ReturnItemsDialog(
-        items: _items,
+        items: returnableItems,
         invoice: inv,
         onSubmit: (returnItems, refundAmount, notes) async {
           try {
@@ -1118,11 +1136,11 @@ class _ReturnItemsDialogState extends State<_ReturnItemsDialog> {
       if (!_selected[i]) continue;
       final qty = double.tryParse(_qtyControllers[i].text) ?? 0;
       if (qty <= 0) continue;
-      if (qty > widget.items[i].soldQuantity) {
+      if (qty > widget.items[i].returnableQuantity) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
-                  '${widget.items[i].productName}: return qty exceeds sold qty')),
+                  '${widget.items[i].productName}: return qty exceeds returnable qty (${widget.items[i].returnableQuantity})')),
         );
         return;
       }
@@ -1234,10 +1252,16 @@ class _ReturnItemsDialogState extends State<_ReturnItemsDialog> {
                                           fontWeight: FontWeight.w500,
                                           fontSize: 14)),
                                   Text(
-                                      'Sold: ${item.soldQuantity} ${item.unitType} @ ${item.unitPrice.toStringAsFixed(0)} EGP',
+                                      'Returnable: ${item.returnableQuantity % 1 == 0 ? item.returnableQuantity.toInt() : item.returnableQuantity.toStringAsFixed(2)} ${item.unitType} @ ${item.unitPrice.toStringAsFixed(0)} EGP',
                                       style: const TextStyle(
                                           fontSize: 12,
                                           color: AppColors.textSecondary)),
+                                  if (item.returnedQuantity > 0)
+                                    Text(
+                                        'Already returned: ${item.returnedQuantity % 1 == 0 ? item.returnedQuantity.toInt() : item.returnedQuantity.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.warning)),
                                 ],
                               ),
                             ),
