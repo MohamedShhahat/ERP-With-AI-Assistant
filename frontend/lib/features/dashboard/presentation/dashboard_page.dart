@@ -28,58 +28,28 @@ class DashboardPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Dashboard',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+          const Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text('Welcome back. Here\'s your business overview.',
-              style: TextStyle(color: AppColors.textSecondary)),
+          Text('Welcome back. Here\'s your business overview.', style: TextStyle(color: AppColors.textSecondary)),
           const SizedBox(height: 24),
 
           // KPI Cards
           summaryAsync.when(
             loading: () => GridView.count(
-              crossAxisCount: 5,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.6,
+              crossAxisCount: 5, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16, crossAxisSpacing: 16, childAspectRatio: 1.6,
               children: List.generate(5, (_) => const CardSkeletonLoader()),
             ),
             error: (err, _) => Text('Error: $err'),
             data: (s) => GridView.count(
-              crossAxisCount: 5,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.6,
+              crossAxisCount: 5, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16, crossAxisSpacing: 16, childAspectRatio: 1.6,
               children: [
-                KPICard(
-                    title: 'Today\'s Sales',
-                    value: '\$${s.todaySales}',
-                    icon: Icons.trending_up,
-                    color: AppColors.success),
-                KPICard(
-                    title: 'Monthly Profit',
-                    value: '\$${s.monthlyProfit}',
-                    icon: Icons.bar_chart,
-                    color: AppColors.primary),
-                KPICard(
-                    title: 'Low Stock',
-                    value: '${s.lowStockProducts}',
-                    icon: Icons.warning_rounded,
-                    color: AppColors.warning),
-                KPICard(
-                    title: 'Pending Payments',
-                    value: '${s.pendingPayments}',
-                    icon: Icons.schedule,
-                    color: AppColors.error),
-                KPICard(
-                    title: 'Cash Balance',
-                    value: '\$${s.cashBalance}',
-                    icon: Icons.account_balance_wallet,
-                    color: AppColors.info),
+                KPICard(title: 'Today\'s Sales', value: '\$${s.todaySales}', icon: Icons.trending_up, color: AppColors.success),
+                KPICard(title: 'Monthly Profit', value: '\$${s.monthlyProfit}', icon: Icons.bar_chart, color: AppColors.primary),
+                KPICard(title: 'Low Stock', value: '${s.lowStockProducts}', icon: Icons.warning_rounded, color: AppColors.warning),
+                KPICard(title: 'Pending Payments', value: '${s.pendingPayments}', icon: Icons.schedule, color: AppColors.error),
+                KPICard(title: 'Cash Balance', value: '\$${s.cashBalance}', icon: Icons.account_balance_wallet, color: AppColors.info),
               ],
             ),
           ),
@@ -96,13 +66,10 @@ class DashboardPage extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color:
-                              isDark ? AppColors.darkBorder : AppColors.border),
+                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                     child: salesAsync.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                      loading: () => const Center(child: CircularProgressIndicator()),
                       error: (e, _) => Center(child: Text('$e')),
                       data: (data) => RevenueChart(data: data),
                     ),
@@ -115,13 +82,10 @@ class DashboardPage extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color:
-                              isDark ? AppColors.darkBorder : AppColors.border),
+                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                     child: insightsAsync.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                      loading: () => const Center(child: CircularProgressIndicator()),
                       error: (_, __) => const AIInsightsWidget(insights: []),
                       data: (insights) => AIInsightsWidget(insights: insights),
                     ),
@@ -143,13 +107,10 @@ class DashboardPage extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color:
-                              isDark ? AppColors.darkBorder : AppColors.border),
+                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                     child: profitAsync.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                      loading: () => const Center(child: CircularProgressIndicator()),
                       error: (e, _) => Center(child: Text('$e')),
                       data: (data) => ProfitChart(data: data),
                     ),
@@ -162,13 +123,10 @@ class DashboardPage extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkSurface : AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color:
-                              isDark ? AppColors.darkBorder : AppColors.border),
+                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
                     ),
                     child: topProductsAsync.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                      loading: () => const Center(child: CircularProgressIndicator()),
                       error: (e, _) => Center(child: Text('$e')),
                       data: (data) => TopProductsChart(data: data),
                     ),
@@ -186,8 +144,7 @@ class DashboardPage extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: isDark ? AppColors.darkBorder : AppColors.border),
+                border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
               ),
               child: cashFlowAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),

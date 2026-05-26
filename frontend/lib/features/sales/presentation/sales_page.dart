@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_refresh.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../customers/data/customers_repository.dart';
@@ -27,7 +28,7 @@ class _SalesPageState extends ConsumerState<SalesPage> {
   }
 
   void _refreshAfterOperation() {
-    ref.invalidate(salesProvider);
+    invalidateAfterSale(ref);
     if (_selectedInvoice != null) {
       final repo = ref.read(salesRepositoryProvider);
       repo.getById(_selectedInvoice!.invoiceId).then((updated) {
@@ -337,7 +338,7 @@ class _SalesPageState extends ConsumerState<SalesPage> {
       context: context,
       barrierDismissible: false,
       builder: (_) => CreateSaleDialog(
-        onCreated: () => ref.invalidate(salesProvider),
+        onCreated: () => invalidateAfterSale(ref),
       ),
     );
   }
@@ -348,42 +349,79 @@ class _SalesPageState extends ConsumerState<SalesPage> {
 
   void _showAlerts() {
     final kpis = ref.read(salesKpisProvider);
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Sales Alerts'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (kpis.unpaidCount > 0)
-              ListTile(
-                  leading: const Icon(Icons.error, color: AppColors.error),
-                  title: Text('${kpis.unpaidCount} unpaid invoices'),
-                  subtitle: Text(_formatCurrency(kpis.totalUnpaid))),
-            if (kpis.partialCount > 0)
-              ListTile(
-                  leading: const Icon(Icons.warning, color: AppColors.warning),
-                  title: Text('${kpis.partialCount} partially paid')),
-            if (kpis.creditPercentage > 50)
-              ListTile(
-                  leading:
-                      const Icon(Icons.credit_card, color: AppColors.warning),
-                  title: const Text('High credit exposure'),
-                  subtitle: Text(
-                      '${kpis.creditPercentage.toStringAsFixed(0)}% of sales are on credit')),
-            if (kpis.unpaidCount == 0 && kpis.partialCount == 0)
-              const ListTile(
-                  leading: Icon(Icons.check_circle, color: AppColors.success),
-                  title: Text('All invoices are paid!')),
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Sales Alerts'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (kpis.unpaidCount > 0)
+                  ListTile(
+                    leading: const Icon(
+                      Icons.error,
+                      color: AppColors.error,
+                    ),
+                    title: Text(
+                      '${kpis.unpaidCount} unpaid invoices',
+                    ),
+                    subtitle: Text(
+                      _formatCurrency(kpis.totalUnpaid),
+                    ),
+                  ),
+                if (kpis.partialCount > 0)
+                  ListTile(
+                    leading: const Icon(
+                      Icons.warning,
+                      color: AppColors.warning,
+                    ),
+                    title: Text(
+                      '${kpis.partialCount} partially paid',
+                    ),
+                  ),
+                if (kpis.creditPercentage > 50)
+                  ListTile(
+                    leading: const Icon(
+                      Icons.credit_card,
+                      color: AppColors.warning,
+                    ),
+                    title: const Text(
+                      'High credit exposure',
+                    ),
+                    subtitle: Text(
+                      '${kpis.creditPercentage.toStringAsFixed(0)}% of sales are on credit',
+                    ),
+                  ),
+                if (kpis.unpaidCount == 0 && kpis.partialCount == 0)
+                  const ListTile(
+                    leading: Icon(
+                      Icons.check_circle,
+                      color: AppColors.success,
+                    ),
+                    title: Text(
+                      'All invoices are paid!',
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (Navigator.of(dialogContext).canPop()) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
+              child: const Text('Close'),
+            ),
           ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'))
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -335,19 +335,59 @@ CREATE TABLE suppliers (
 -- 9. Sales Invoices Table
 CREATE TABLE sales_invoices (
     invoice_id SERIAL PRIMARY KEY,
-    customer_id INTEGER REFERENCES customers(customer_id),
-    invoice_number VARCHAR(50) NOT NULL UNIQUE,
-    invoice_type VARCHAR(10) NOT NULL CHECK (invoice_type IN ('cash', 'credit')) DEFAULT 'cash',
-    invoice_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(14, 2) NOT NULL DEFAULT 0,
-    discount_amount DECIMAL(14, 2) NOT NULL DEFAULT 0,
-    paid_amount DECIMAL(14, 2) NOT NULL DEFAULT 0,
-    remaining_amount DECIMAL(14, 2) NOT NULL DEFAULT 0,
-    payment_status VARCHAR(20) NOT NULL CHECK (payment_status IN ('paid', 'partial', 'unpaid')) DEFAULT 'unpaid',
-    warehouse_id INTEGER NOT NULL REFERENCES warehouses(warehouse_id),
+
+    customer_id INTEGER
+        REFERENCES customers(customer_id),
+
+    invoice_number VARCHAR(50)
+        NOT NULL UNIQUE,
+
+    invoice_type VARCHAR(10)
+        NOT NULL
+        CHECK (invoice_type IN ('cash', 'credit', 'mixed'))
+        DEFAULT 'cash',
+
+    invoice_date TIMESTAMP
+        NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    total_amount DECIMAL(14, 2)
+        NOT NULL
+        DEFAULT 0,
+
+    discount_amount DECIMAL(14, 2)
+        NOT NULL
+        DEFAULT 0,
+
+    paid_amount DECIMAL(14, 2)
+        NOT NULL
+        DEFAULT 0,
+
+    remaining_amount DECIMAL(14, 2)
+        NOT NULL
+        DEFAULT 0,
+
+    payment_status VARCHAR(20)
+        NOT NULL
+        CHECK (payment_status IN ('paid', 'partial', 'unpaid'))
+        DEFAULT 'unpaid',
+
+    warehouse_id INTEGER
+        NOT NULL
+        REFERENCES warehouses(warehouse_id),
+
     warehouse_notes TEXT,
+
     notes TEXT,
-    CONSTRAINT chk_credit_requires_customer CHECK (invoice_type = 'cash' OR (invoice_type = 'credit' AND customer_id IS NOT NULL))
+
+    CONSTRAINT chk_credit_requires_customer
+        CHECK (
+            invoice_type = 'cash'
+            OR (
+                invoice_type IN ('credit', 'mixed')
+                AND customer_id IS NOT NULL
+            )
+        )
 );
 
 -- 10. Sales Invoice Items

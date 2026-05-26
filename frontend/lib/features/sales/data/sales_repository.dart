@@ -110,8 +110,7 @@ class InvoiceItemModel {
       itemId: json['item_id'] ?? 0,
       productId: json['product_id'],
       productName: json['product_name'] ?? 'Unknown Product',
-      soldQuantity:
-          double.tryParse(json['sold_quantity']?.toString() ?? '0') ?? 0,
+      soldQuantity: double.tryParse(json['sold_quantity']?.toString() ?? '0') ?? 0,
       unitType: json['unit_type'] ?? 'meter',
       unitPrice: double.tryParse(json['unit_price']?.toString() ?? '0') ?? 0,
       discount: double.tryParse(json['discount']?.toString() ?? '0') ?? 0,
@@ -161,9 +160,7 @@ class SalesRepository {
 
   Future<List<SalesInvoiceModel>> getAll() async {
     final response = await _dio.get('/sales');
-    return (response.data as List)
-        .map((e) => SalesInvoiceModel.fromJson(e))
-        .toList();
+    return (response.data as List).map((e) => SalesInvoiceModel.fromJson(e)).toList();
   }
 
   Future<SalesInvoiceModel> getById(int id) async {
@@ -176,8 +173,7 @@ class SalesRepository {
     return SalesInvoiceModel.fromJson(response.data);
   }
 
-  Future<SalesInvoiceModel> update(
-      int invoiceId, Map<String, dynamic> data) async {
+  Future<SalesInvoiceModel> update(int invoiceId, Map<String, dynamic> data) async {
     final response = await _dio.put('/sales/$invoiceId', data: data);
     return SalesInvoiceModel.fromJson(response.data);
   }
@@ -190,23 +186,15 @@ class SalesRepository {
 
   Future<List<InvoicePaymentModel>> getInvoicePayments(int invoiceId) async {
     final response = await _dio.get('/sales/$invoiceId/payments');
-    return (response.data as List)
-        .map((e) => InvoicePaymentModel.fromJson(e))
-        .toList();
+    return (response.data as List).map((e) => InvoicePaymentModel.fromJson(e)).toList();
   }
 
   Future<List<InvoiceItemModel>> getInvoiceItems(int invoiceId) async {
     final response = await _dio.get('/sales/$invoiceId/items');
-    return (response.data as List)
-        .map((e) => InvoiceItemModel.fromJson(e))
-        .toList();
+    return (response.data as List).map((e) => InvoiceItemModel.fromJson(e)).toList();
   }
 
-  Future<void> recordPayment(
-      {required int customerId,
-      int? invoiceId,
-      required double amount,
-      String? notes}) async {
+  Future<void> recordPayment({required int customerId, int? invoiceId, required double amount, String? notes}) async {
     await _dio.post('/payments/customers', data: {
       'customer_id': customerId,
       'related_invoice_id': invoiceId,
@@ -217,8 +205,6 @@ class SalesRepository {
 
   Future<String> aiChat(String message) async {
     final response = await _dio.post('/ai/chat', data: {'message': message});
-    return response.data['response'] ??
-        response.data['message'] ??
-        'No response';
+    return response.data['response'] ?? response.data['message'] ?? 'No response';
   }
 }

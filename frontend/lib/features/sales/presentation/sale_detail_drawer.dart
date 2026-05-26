@@ -22,8 +22,7 @@ class SaleDetailDrawer extends ConsumerStatefulWidget {
   ConsumerState<SaleDetailDrawer> createState() => _SaleDetailDrawerState();
 }
 
-class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
-    with SingleTickerProviderStateMixin {
+class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String? _aiResponse;
   bool _aiLoading = false;
@@ -75,24 +74,14 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inv = widget.invoice;
-    final statusColor = inv.isPaid
-        ? AppColors.success
-        : inv.isPartial
-            ? AppColors.warning
-            : AppColors.error;
-    final statusLabel = inv.isPaid
-        ? 'Paid'
-        : inv.isPartial
-            ? 'Partial'
-            : 'Unpaid';
+    final statusColor = inv.isPaid ? AppColors.success : inv.isPartial ? AppColors.warning : AppColors.error;
+    final statusLabel = inv.isPaid ? 'Paid' : inv.isPartial ? 'Partial' : 'Unpaid';
 
     return Container(
       width: 380,
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : AppColors.surface,
-        border: Border(
-            left: BorderSide(
-                color: isDark ? AppColors.darkBorder : AppColors.border)),
+        border: Border(left: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border)),
       ),
       child: Column(
         children: [
@@ -102,9 +91,7 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
                   child: Icon(Icons.receipt_long, color: statusColor, size: 22),
                 ),
                 const SizedBox(width: 12),
@@ -112,41 +99,24 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(inv.invoiceNumber,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 16)),
-                      Text(widget.customerName,
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.textSecondary)),
+                      Text(inv.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                      Text(widget.customerName, style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                     ],
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12)),
-                  child: Text(statusLabel,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: statusColor,
-                          fontWeight: FontWeight.w600)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Text(statusLabel, style: TextStyle(fontSize: 12, color: statusColor, fontWeight: FontWeight.w600)),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
-                    onPressed: widget.onClose,
-                    icon: const Icon(Icons.close, size: 20)),
+                IconButton(onPressed: widget.onClose, icon: const Icon(Icons.close, size: 20)),
               ],
             ),
           ),
           TabBar(
             controller: _tabController,
-            labelStyle:
-                const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             tabs: const [
               Tab(text: 'Overview'),
               Tab(text: 'AI Insights'),
@@ -178,43 +148,30 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
           const SizedBox(height: 8),
           _infoRow('Type', inv.invoiceType.toUpperCase(), isDark),
           _infoRow('Warehouse', 'Warehouse ${inv.warehouseId}', isDark),
-          if (inv.invoiceDate != null)
-            _infoRow('Date', _formatDate(inv.invoiceDate!), isDark),
+          if (inv.invoiceDate != null) _infoRow('Date', _formatDate(inv.invoiceDate!), isDark),
           _infoRow('Invoice ID', '#${inv.invoiceId}', isDark),
           const SizedBox(height: 16),
           _buildProductsList(isDark),
           const SizedBox(height: 16),
           _sectionTitle('Financial Summary'),
           const SizedBox(height: 8),
-          _infoRow(
-              'Total Amount', '${inv.total.toStringAsFixed(2)} EGP', isDark),
-          _infoRow(
-              'Discount', '${inv.discount.toStringAsFixed(2)} EGP', isDark),
+          _infoRow('Total Amount', '${inv.total.toStringAsFixed(2)} EGP', isDark),
+          _infoRow('Discount', '${inv.discount.toStringAsFixed(2)} EGP', isDark),
           _infoRow('Paid', '${inv.paid.toStringAsFixed(2)} EGP', isDark),
-          _infoRow(
-              'Remaining', '${inv.remaining.toStringAsFixed(2)} EGP', isDark,
-              valueColor:
-                  inv.remaining > 0 ? AppColors.error : AppColors.success),
+          _infoRow('Remaining', '${inv.remaining.toStringAsFixed(2)} EGP', isDark, valueColor: inv.remaining > 0 ? AppColors.error : AppColors.success),
           const SizedBox(height: 16),
           if (!inv.isPaid) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value:
-                    inv.total > 0 ? (inv.paid / inv.total).clamp(0.0, 1.0) : 0,
+                value: inv.total > 0 ? (inv.paid / inv.total).clamp(0.0, 1.0) : 0,
                 backgroundColor: Colors.grey.withOpacity(0.15),
                 color: statusColor,
                 minHeight: 6,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-                '${(inv.paid / (inv.total > 0 ? inv.total : 1) * 100).toStringAsFixed(0)}% paid',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.textSecondary)),
+            Text('${(inv.paid / (inv.total > 0 ? inv.total : 1) * 100).toStringAsFixed(0)}% paid', style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
             const SizedBox(height: 16),
           ],
           _buildPaymentHistory(isDark),
@@ -234,21 +191,12 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
             if (!_itemsLoading && _items.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10)),
-                child: Text('${_items.length}',
-                    style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary)),
+                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                child: Text('${_items.length}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
               ),
             const Spacer(),
             if (_itemsLoading)
-              const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
           ],
         ),
         const SizedBox(height: 8),
@@ -259,81 +207,67 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
             decoration: BoxDecoration(
               color: Colors.grey.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                  color: isDark ? AppColors.darkBorder : AppColors.border),
+              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
             ),
             child: Text(
               'No items found',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary),
+              style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ),
         ..._items.map((item) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                    color: isDark ? AppColors.darkBorder : AppColors.border),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 16),
               ),
-              child: Row(
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.productName,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${item.soldQuantity % 1 == 0 ? item.soldQuantity.toInt() : item.soldQuantity.toStringAsFixed(2)} ${item.unitType} × ${item.unitPrice.toStringAsFixed(2)} EGP',
+                      style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(6),
+                  Text(
+                    '${item.totalPrice.toStringAsFixed(2)} EGP',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
+                  if (item.discount > 0)
+                    Text(
+                      '-${item.discount.toStringAsFixed(2)}',
+                      style: const TextStyle(fontSize: 11, color: AppColors.error),
                     ),
-                    child: const Icon(Icons.inventory_2_outlined,
-                        color: AppColors.primary, size: 16),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.productName,
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${item.soldQuantity % 1 == 0 ? item.soldQuantity.toInt() : item.soldQuantity.toStringAsFixed(2)} ${item.unitType} × ${item.unitPrice.toStringAsFixed(2)} EGP',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${item.totalPrice.toStringAsFixed(2)} EGP',
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w700),
-                      ),
-                      if (item.discount > 0)
-                        Text(
-                          '-${item.discount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                              fontSize: 11, color: AppColors.error),
-                        ),
-                    ],
-                  ),
                 ],
               ),
-            )),
+            ],
+          ),
+        )),
       ],
     );
   }
@@ -347,10 +281,7 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
             _sectionTitle('Payment History'),
             const Spacer(),
             if (_paymentsLoading)
-              const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
           ],
         ),
         const SizedBox(height: 8),
@@ -361,72 +292,57 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
             decoration: BoxDecoration(
               color: Colors.grey.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                  color: isDark ? AppColors.darkBorder : AppColors.border),
+              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
             ),
             child: Text(
               'No payments recorded yet',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary),
+              style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ),
         ..._payments.map((p) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.success.withOpacity(0.2)),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.success.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.success.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.check_circle, color: AppColors.success, size: 16),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${p.amount.toStringAsFixed(2)} EGP',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                     ),
-                    child: const Icon(Icons.check_circle,
-                        color: AppColors.success, size: 16),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${p.amount.toStringAsFixed(2)} EGP',
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w600),
-                        ),
-                        if (p.paymentDate != null)
-                          Text(
-                            _formatDate(p.paymentDate!),
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.textSecondary),
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (p.notes != null && p.notes!.isNotEmpty)
-                    Tooltip(
-                      message: p.notes!,
-                      child: Icon(Icons.note,
-                          size: 14,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.textSecondary),
-                    ),
-                ],
+                    if (p.paymentDate != null)
+                      Text(
+                        _formatDate(p.paymentDate!),
+                        style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                      ),
+                  ],
+                ),
               ),
-            )),
+              if (p.notes != null && p.notes!.isNotEmpty)
+                Tooltip(
+                  message: p.notes!,
+                  child: Icon(Icons.note, size: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                ),
+            ],
+          ),
+        )),
       ],
     );
   }
@@ -448,34 +364,28 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
           _sectionTitle('Ask AI about this invoice'),
           const SizedBox(height: 12),
           ...questions.map((q) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: InkWell(
-                  onTap: () => _askAi(q),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: InkWell(
+              onTap: () => _askAi(q),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color:
-                              isDark ? AppColors.darkBorder : AppColors.border),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.smart_toy_outlined,
-                            size: 16, color: AppColors.primary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                            child:
-                                Text(q, style: const TextStyle(fontSize: 13))),
-                        const Icon(Icons.arrow_forward_ios,
-                            size: 12, color: AppColors.textSecondary),
-                      ],
-                    ),
-                  ),
+                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
                 ),
-              )),
+                child: Row(
+                  children: [
+                    const Icon(Icons.smart_toy_outlined, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(q, style: const TextStyle(fontSize: 13))),
+                    const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.textSecondary),
+                  ],
+                ),
+              ),
+            ),
+          )),
           if (_aiLoading) ...[
             const SizedBox(height: 16),
             const Center(child: CircularProgressIndicator()),
@@ -495,19 +405,13 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.auto_awesome,
-                          size: 14, color: AppColors.primary),
+                      Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
                       SizedBox(width: 6),
-                      Text('AI Response',
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary)),
+                      Text('AI Response', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  SelectableText(_aiResponse!,
-                      style: const TextStyle(fontSize: 13)),
+                  SelectableText(_aiResponse!, style: const TextStyle(fontSize: 13)),
                 ],
               ),
             ),
@@ -526,64 +430,30 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
           _sectionTitle('Quick Actions'),
           const SizedBox(height: 12),
           if (!inv.isPaid)
-            _actionTile(
-                Icons.payment,
-                'Record Payment',
-                'Add a payment to this invoice',
-                AppColors.success,
-                () => _recordPayment(inv)),
-          _actionTile(Icons.print, 'Print Invoice', 'Generate PDF invoice',
-              AppColors.info, () => _printInvoice(inv)),
-          _actionTile(Icons.edit, 'Edit Invoice', 'Modify invoice details',
-              AppColors.warning, () => _editInvoice(inv)),
-          _actionTile(
-              Icons.undo,
-              'Return / Cancel',
-              'Process return or cancel invoice',
-              AppColors.error,
-              () => _cancelInvoice(inv)),
+            _actionTile(Icons.payment, 'Record Payment', 'Add a payment to this invoice', AppColors.success, () => _recordPayment(inv)),
+          _actionTile(Icons.print, 'Print Invoice', 'Generate PDF invoice', AppColors.info, () => _printInvoice(inv)),
+          _actionTile(Icons.edit, 'Edit Invoice', 'Modify invoice details', AppColors.warning, () => _editInvoice(inv)),
+          _actionTile(Icons.undo, 'Return / Cancel', 'Process return or cancel invoice', AppColors.error, () => _cancelInvoice(inv)),
           const Divider(height: 32),
           _sectionTitle('AI Actions'),
           const SizedBox(height: 12),
-          _actionTile(
-              Icons.smart_toy,
-              'Explain Invoice',
-              'AI breakdown of this sale',
-              AppColors.primary,
-              () => _askAi(
-                  'Explain invoice ${inv.invoiceNumber}: Total ${inv.totalAmount}, Customer: ${widget.customerName}, Status: ${inv.paymentStatus}')),
-          _actionTile(
-              Icons.trending_up,
-              'Sales Analysis',
-              'AI analysis of this customer\'s sales pattern',
-              AppColors.primary,
-              () => _askAi(
-                  'Analyze sales pattern for customer ${widget.customerName}')),
-          _actionTile(
-              Icons.lightbulb,
-              'Recommendations',
-              'Get AI recommendations',
-              AppColors.primary,
-              () => _askAi(
-                  'What recommendations do you have for invoice ${inv.invoiceNumber}?')),
+          _actionTile(Icons.smart_toy, 'Explain Invoice', 'AI breakdown of this sale', AppColors.primary, () => _askAi('Explain invoice ${inv.invoiceNumber}: Total ${inv.totalAmount}, Customer: ${widget.customerName}, Status: ${inv.paymentStatus}')),
+          _actionTile(Icons.trending_up, 'Sales Analysis', 'AI analysis of this customer\'s sales pattern', AppColors.primary, () => _askAi('Analyze sales pattern for customer ${widget.customerName}')),
+          _actionTile(Icons.lightbulb, 'Recommendations', 'Get AI recommendations', AppColors.primary, () => _askAi('What recommendations do you have for invoice ${inv.invoiceNumber}?')),
         ],
       ),
     );
   }
 
-  Widget _actionTile(IconData icon, String title, String subtitle, Color color,
-      VoidCallback onTap) {
+  Widget _actionTile(IconData icon, String title, String subtitle, Color color, VoidCallback onTap) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
         child: Icon(icon, color: color, size: 20),
       ),
-      title: Text(title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
       trailing: const Icon(Icons.chevron_right, size: 18),
       onTap: onTap,
@@ -591,36 +461,24 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
   }
 
   Widget _sectionTitle(String title) {
-    return Text(title,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700));
+    return Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700));
   }
 
-  Widget _infoRow(String label, String value, bool isDark,
-      {Color? valueColor}) {
+  Widget _infoRow(String label, String value, bool isDark, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 13,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.textSecondary)),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor)),
+          Text(label, style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: valueColor)),
         ],
       ),
     );
   }
 
   void _printInvoice(SalesInvoiceModel inv) {
-    final dateStr =
-        inv.invoiceDate != null ? _formatDate(inv.invoiceDate!) : 'N/A';
+    final dateStr = inv.invoiceDate != null ? _formatDate(inv.invoiceDate!) : 'N/A';
 
     var tableHtml = '''
 <div style="margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
@@ -641,9 +499,7 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
         rows: _items.asMap().entries.map((entry) {
           final i = entry.key + 1;
           final item = entry.value;
-          final qty = item.soldQuantity % 1 == 0
-              ? '${item.soldQuantity.toInt()}'
-              : item.soldQuantity.toStringAsFixed(2);
+          final qty = item.soldQuantity % 1 == 0 ? '${item.soldQuantity.toInt()}' : item.soldQuantity.toStringAsFixed(2);
           return [
             '$i',
             item.productName,
@@ -675,8 +531,7 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
         rows: _payments.asMap().entries.map((entry) {
           final i = entry.key + 1;
           final p = entry.value;
-          final pDate =
-              p.paymentDate != null ? _formatDate(p.paymentDate!) : 'N/A';
+          final pDate = p.paymentDate != null ? _formatDate(p.paymentDate!) : 'N/A';
           return ['$i', p.amount.toStringAsFixed(2), pDate, p.notes ?? '—'];
         }).toList(),
       );
@@ -690,15 +545,12 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
 </div>
 ''';
 
-    printReportHtml(
-        title: 'Invoice ${inv.invoiceNumber}', tableHtml: tableHtml);
+    printReportHtml(title: 'Invoice ${inv.invoiceNumber}', tableHtml: tableHtml);
   }
 
   void _editInvoice(SalesInvoiceModel inv) {
-    final discountController =
-        TextEditingController(text: inv.discount.toStringAsFixed(2));
-    final paidController =
-        TextEditingController(text: inv.paid.toStringAsFixed(2));
+    final discountController = TextEditingController(text: inv.discount.toStringAsFixed(2));
+    final paidController = TextEditingController(text: inv.paid.toStringAsFixed(2));
     String invoiceType = inv.invoiceType;
 
     showDialog(
@@ -731,20 +583,14 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline,
-                            size: 16, color: AppColors.info),
+                        const Icon(Icons.info_outline, size: 16, color: AppColors.info),
                         const SizedBox(width: 8),
-                        Expanded(
-                            child: Text(
-                                'Original Total: ${inv.total.toStringAsFixed(2)} EGP',
-                                style: const TextStyle(fontSize: 12))),
+                        Expanded(child: Text('Original Total: ${inv.total.toStringAsFixed(2)} EGP', style: const TextStyle(fontSize: 12))),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Invoice Type',
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  const Text('Invoice Type', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 8),
                   SegmentedButton<String>(
                     segments: const [
@@ -753,23 +599,20 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                       ButtonSegment(value: 'mixed', label: Text('Mixed')),
                     ],
                     selected: {invoiceType},
-                    onSelectionChanged: (v) =>
-                        setDialogState(() => invoiceType = v.first),
+                    onSelectionChanged: (v) => setDialogState(() => invoiceType = v.first),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: discountController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                        labelText: 'Discount Amount', prefixText: 'EGP '),
+                    decoration: const InputDecoration(labelText: 'Discount Amount', prefixText: 'EGP '),
                     onChanged: (_) => setDialogState(() {}),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: paidController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                        labelText: 'Paid Amount', prefixText: 'EGP '),
+                    decoration: const InputDecoration(labelText: 'Paid Amount', prefixText: 'EGP '),
                     onChanged: (_) => setDialogState(() {}),
                   ),
                   const SizedBox(height: 16),
@@ -781,10 +624,8 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                     ),
                     child: Column(
                       children: [
-                        _editSummaryRow(
-                            'New Total', '${newTotal.toStringAsFixed(2)} EGP'),
-                        _editSummaryRow('New Remaining',
-                            '${newRemaining.toStringAsFixed(2)} EGP'),
+                        _editSummaryRow('New Total', '${newTotal.toStringAsFixed(2)} EGP'),
+                        _editSummaryRow('New Remaining', '${newRemaining.toStringAsFixed(2)} EGP'),
                       ],
                     ),
                   ),
@@ -792,9 +633,7 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
               ),
             ),
             actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
               ElevatedButton(
                 onPressed: () async {
                   try {
@@ -807,19 +646,15 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                     if (ctx.mounted) Navigator.pop(ctx);
                     widget.onPaymentRecorded();
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Invoice updated successfully')));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invoice updated successfully')));
                     }
                   } catch (e) {
                     if (ctx.mounted) {
-                      ScaffoldMessenger.of(ctx)
-                          .showSnackBar(SnackBar(content: Text('Error: $e')));
+                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Error: $e')));
                     }
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.warning,
-                    foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning, foregroundColor: Colors.white),
                 child: const Text('Save Changes'),
               ),
             ],
@@ -857,21 +692,14 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                 children: [
                   Icon(Icons.error_outline, size: 16, color: AppColors.error),
                   SizedBox(width: 8),
-                  Expanded(
-                      child: Text(
-                          'This action will cancel the invoice and reverse any associated inventory and ledger entries. This cannot be undone.',
-                          style:
-                              TextStyle(fontSize: 12, color: AppColors.error))),
+                  Expanded(child: Text('This action will cancel the invoice and reverse any associated inventory and ledger entries. This cannot be undone.', style: TextStyle(fontSize: 12, color: AppColors.error))),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            Text('Invoice: ${inv.invoiceNumber}',
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text('Customer: ${widget.customerName}',
-                style: const TextStyle(fontSize: 13)),
-            Text('Amount: ${inv.total.toStringAsFixed(2)} EGP',
-                style: const TextStyle(fontSize: 13)),
+            Text('Invoice: ${inv.invoiceNumber}', style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text('Customer: ${widget.customerName}', style: const TextStyle(fontSize: 13)),
+            Text('Amount: ${inv.total.toStringAsFixed(2)} EGP', style: const TextStyle(fontSize: 13)),
             const SizedBox(height: 16),
             TextField(
               controller: reasonController,
@@ -884,15 +712,12 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
           ],
         ),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Keep Invoice')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Keep Invoice')),
           ElevatedButton(
             onPressed: () async {
               final reason = reasonController.text.trim();
               if (reason.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                    content: Text('Please provide a reason for cancellation')));
+                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Please provide a reason for cancellation')));
                 return;
               }
               try {
@@ -901,19 +726,15 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                 if (ctx.mounted) Navigator.pop(ctx);
                 widget.onPaymentRecorded();
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Invoice ${inv.invoiceNumber} cancelled')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invoice ${inv.invoiceNumber} cancelled')));
                 }
               } catch (e) {
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx)
-                      .showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               }
             },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
             child: const Text('Cancel Invoice'),
           ),
         ],
@@ -922,10 +743,7 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
   }
 
   Future<void> _askAi(String question) async {
-    setState(() {
-      _aiLoading = true;
-      _aiResponse = null;
-    });
+    setState(() { _aiLoading = true; _aiResponse = null; });
     _tabController.animateTo(1);
     try {
       final repo = ref.read(salesRepositoryProvider);
@@ -953,14 +771,12 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                  labelText: 'Payment Amount', prefixText: 'EGP '),
+              decoration: const InputDecoration(labelText: 'Payment Amount', prefixText: 'EGP '),
             ),
           ],
         ),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               final amount = double.tryParse(amountController.text);
@@ -977,16 +793,14 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                          'Payment of ${amount.toStringAsFixed(2)} EGP recorded successfully'),
+                      content: Text('Payment of ${amount.toStringAsFixed(2)} EGP recorded successfully'),
                       backgroundColor: AppColors.success,
                     ),
                   );
                 }
               } catch (e) {
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx)
-                      .showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               }
             },
@@ -1004,9 +818,7 @@ class _SaleDetailDrawerState extends ConsumerState<SaleDetailDrawer>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 13)),
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );
