@@ -136,10 +136,10 @@ class _ProductDetailDrawerState extends ConsumerState<ProductDetailDrawer>
                         const SizedBox(height: 8),
                         _InfoRow(
                             label: 'Purchase Cost',
-                            value: '\$${p.purchaseCost}'),
+                            value: 'EGP ${p.purchaseCost}'),
                         _InfoRow(
                             label: 'Selling Price',
-                            value: '\$${p.sellingPrice}'),
+                            value: 'EGP ${p.sellingPrice}'),
                         _InfoRow(
                             label: 'Profit Margin',
                             value: '${p.profitMargin.toStringAsFixed(1)}%'),
@@ -254,7 +254,7 @@ class _ProductDetailDrawerState extends ConsumerState<ProductDetailDrawer>
                           _AiChip(
                               label: 'Best price?',
                               onTap: () => _askAi(
-                                  'What price should I set for "${p.productName}"? Current selling price is \$${p.sellingPrice}, cost is \$${p.purchaseCost}.')),
+                                  'What price should I set for "${p.productName}"? Current selling price is EGP ${p.sellingPrice}, cost is EGP ${p.purchaseCost}.')),
                           _AiChip(
                               label: 'Compare similar',
                               onTap: () => _askAi(
@@ -318,7 +318,7 @@ class _ProductDetailDrawerState extends ConsumerState<ProductDetailDrawer>
                     _ActionButton(
                         icon: Icons.analytics,
                         label: 'View Analytics',
-                        onTap: () => _viewAnalytics(p)),
+                        onTap: () => _viewAnalytics(p, stockData, totalStock)),
                     _ActionButton(
                       icon: p.activeStatus
                           ? Icons.visibility_off
@@ -475,7 +475,7 @@ class _ProductDetailDrawerState extends ConsumerState<ProductDetailDrawer>
                     style:
                         const TextStyle(fontFamily: 'monospace', fontSize: 12)),
                 const SizedBox(height: 8),
-                Text('Price: \$${p.sellingPrice}',
+                Text('Price: EGP ${p.sellingPrice}',
                     style: const TextStyle(fontWeight: FontWeight.w600)),
               ]),
             ),
@@ -807,129 +807,245 @@ class _ProductDetailDrawerState extends ConsumerState<ProductDetailDrawer>
             }));
   }
 
-  void _viewAnalytics(ProductModel p) {
+  void _viewAnalytics(
+      ProductModel p, List<StockInfo> stockData, double totalStock) {
     showDialog(
         context: context,
-        builder: (ctx) => _AnalyticsDialog(product: p, ref: ref));
+        builder: (ctx) => _AnalyticsDialog(
+            product: p,
+            ref: ref,
+            stockData: stockData,
+            totalStock: totalStock));
   }
 }
 
 class _AnalyticsDialog extends StatefulWidget {
   final ProductModel product;
   final WidgetRef ref;
-  const _AnalyticsDialog({required this.product, required this.ref});
+  final List<StockInfo> stockData;
+  final double totalStock;
+  const _AnalyticsDialog(
+      {required this.product,
+      required this.ref,
+      required this.stockData,
+      required this.totalStock});
   @override
   State<_AnalyticsDialog> createState() => _AnalyticsDialogState();
 }
 
 class _AnalyticsDialogState extends State<_AnalyticsDialog> {
-  bool _loading = true;
-  Map<String, dynamic>? _forecast;
-  String? _error;
+  bool _loadingApi = true;
+  Map<String, dynamic>? _apiData;
 
   @override
   void initState() {
     super.initState();
-    _loadForecast();
+    _loadApiData();
   }
 
-  Future<void> _loadForecast() async {
+  Future<void> _loadApiData() async {
     try {
       final repo = widget.ref.read(productsRepositoryProvider);
-      final data = await repo.getDemandForecast(widget.product.productId);
+      final data = await repo.getAnalytics(widget.product.productId);
       if (mounted)
         setState(() {
-          _forecast = data;
-          _loading = false;
+          _apiData = data;
+          _loadingApi = false;
         });
-    } catch (e) {
-      if (mounted)
-        setState(() {
-          _error = e.toString();
-          _loading = false;
-        });
+    } catch (_) {
+      if (mounted) setState(() => _loadingApi = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = widget.product;
+    final cost = double.tryParse(p.purchaseCost) ?? 0;
+    final price = double.tryParse(p.sellingPrice) ?? 0;
+    final margin = p.profitMargin;
+    final stockValue = widget.stockData
+        .fold<double>(0, (sum, s) => sum + (s.quantity * s.avgCost));
+
     return AlertDialog(
       title: Row(children: [
         const Icon(Icons.analytics, color: AppColors.primary, size: 22),
         const SizedBox(width: 8),
         Expanded(
-            child: Text('Analytics - ${widget.product.productName}',
-                overflow: TextOverflow.ellipsis))
+            child: Text(p.productName,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 16)))
       ]),
       content: SizedBox(
-          width: 400,
-          child: _loading
-              ? const Center(
-                  child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: CircularProgressIndicator()))
-              : _error != null
-                  ? Text('Unable to load forecast: $_error',
-                      style: const TextStyle(color: AppColors.error))
-                  : SingleChildScrollView(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                          const Text('AI Demand Forecast',
+        width: 420,
+        child: SingleChildScrollView(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+              // Always-available info from product model
+              Row(children: [
+                Expanded(
+                    child: _StatCard(
+                        label: 'Selling Price',
+                        value: 'EGP ${price.toStringAsFixed(2)}',
+                        icon: Icons.sell,
+                        color: AppColors.primary)),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: _StatCard(
+                        label: 'Cost',
+                        value: 'EGP ${cost.toStringAsFixed(2)}',
+                        icon: Icons.shopping_cart,
+                        color: AppColors.warning)),
+              ]),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(
+                    child: _StatCard(
+                        label: 'Margin',
+                        value: '${margin.toStringAsFixed(1)}%',
+                        icon: Icons.percent,
+                        color: margin >= 20
+                            ? AppColors.success
+                            : margin >= 10
+                                ? AppColors.warning
+                                : AppColors.error)),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: _StatCard(
+                        label: 'Stock Value',
+                        value: 'EGP ${stockValue.toStringAsFixed(0)}',
+                        icon: Icons.inventory_2,
+                        color: AppColors.primary)),
+              ]),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(
+                    child: _StatCard(
+                        label: 'In Stock',
+                        value:
+                            '${widget.totalStock.toStringAsFixed(1)} ${p.baseUnit}',
+                        icon: Icons.warehouse,
+                        color: widget.totalStock > 0
+                            ? AppColors.success
+                            : AppColors.error)),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: _StatCard(
+                        label: 'Warehouses',
+                        value: '${widget.stockData.length}',
+                        icon: Icons.location_on,
+                        color: AppColors.primary)),
+              ]),
+
+              // API data section (loaded async)
+              if (_loadingApi) ...[
+                const SizedBox(height: 20),
+                const Center(
+                    child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))),
+                const SizedBox(height: 8),
+                const Center(
+                    child: Text('Loading sales history...',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.textSecondary))),
+              ] else if (_apiData != null) ...[
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 12),
+                const Text('Sales Performance',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(
+                      child: _StatCard(
+                          label: 'Total Sold',
+                          value: _fmt(_apiData!['total_sold_quantity']),
+                          icon: Icons.shopping_bag,
+                          color: AppColors.primary)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: _StatCard(
+                          label: 'Revenue',
+                          value: 'EGP ${_fmt(_apiData!['total_revenue'])}',
+                          icon: Icons.attach_money,
+                          color: AppColors.success)),
+                ]),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(
+                      child: _StatCard(
+                          label: 'Profit',
+                          value: 'EGP ${_fmt(_apiData!['total_profit'])}',
+                          icon: Icons.trending_up,
+                          color: (double.tryParse(_apiData!['total_profit']
+                                          .toString()) ??
+                                      0) >=
+                                  0
+                              ? AppColors.success
+                              : AppColors.error)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: _StatCard(
+                          label: 'Sales Count',
+                          value: '${_apiData!['total_transactions'] ?? 0}',
+                          icon: Icons.receipt_long,
+                          color: AppColors.primary)),
+                ]),
+                const SizedBox(height: 16),
+
+                // Trend
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _trendColor(_apiData!['trend']).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color:
+                            _trendColor(_apiData!['trend']).withOpacity(0.3)),
+                  ),
+                  child: Row(children: [
+                    Icon(_trendIcon(_apiData!['trend']),
+                        color: _trendColor(_apiData!['trend']), size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          Text(
+                              'Trend: ${(_apiData!['trend'] ?? 'N/A').toString().toUpperCase()}',
                               style: TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 14)),
-                          const SizedBox(height: 12),
-                          if (_forecast != null) ...[
-                            if (_forecast!['predicted_demand'] != null)
-                              _forecastRow('Predicted Demand',
-                                  '${_forecast!['predicted_demand']} units'),
-                            if (_forecast!['confidence'] != null)
-                              _forecastRow('Confidence',
-                                  '${((_forecast!['confidence'] as num) * 100).toStringAsFixed(0)}%'),
-                            if (_forecast!['trend'] != null)
-                              _forecastRow(
-                                  'Trend', _forecast!['trend'].toString()),
-                            if (_forecast!['recommendation'] != null) ...[
-                              const SizedBox(height: 12),
-                              Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                      color:
-                                          AppColors.primary.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                          color: AppColors.primary
-                                              .withOpacity(0.2))),
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Row(children: [
-                                          Icon(Icons.lightbulb,
-                                              size: 16,
-                                              color: AppColors.primary),
-                                          SizedBox(width: 6),
-                                          Text('Recommendation',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 12,
-                                                  color: AppColors.primary))
-                                        ]),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                            _forecast!['recommendation']
-                                                .toString(),
-                                            style:
-                                                const TextStyle(fontSize: 13))
-                                      ])),
-                            ],
-                            if (_forecast!['response'] != null &&
-                                _forecast!['predicted_demand'] == null)
-                              Text(_forecast!['response'].toString(),
-                                  style: const TextStyle(fontSize: 13)),
-                          ],
-                        ]))),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: _trendColor(_apiData!['trend']))),
+                          Text(
+                              '${_apiData!['trend_percentage'] ?? 0}% vs previous 30 days',
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary)),
+                        ])),
+                  ]),
+                ),
+
+                const SizedBox(height: 12),
+                const Text('Last 30 Days',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 6),
+                _row(
+                    'Quantity Sold',
+                    _fmt(
+                        (_apiData!['last_30_days'] as Map?)?['sold_quantity'])),
+                _row('Revenue',
+                    'EGP ${_fmt((_apiData!['last_30_days'] as Map?)?['revenue'])}'),
+                _row('Transactions',
+                    '${(_apiData!['last_30_days'] as Map?)?['transactions'] ?? 0}'),
+              ],
+            ])),
+      ),
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context), child: const Text('Close'))
@@ -937,17 +1053,81 @@ class _AnalyticsDialogState extends State<_AnalyticsDialog> {
     );
   }
 
-  Widget _forecastRow(String label, String value) {
+  String _fmt(dynamic value) {
+    if (value == null) return '0';
+    final d = double.tryParse(value.toString()) ?? 0;
+    if (d == d.roundToDouble()) return d.toInt().toString();
+    return d.toStringAsFixed(2);
+  }
+
+  Color _trendColor(String? trend) {
+    switch (trend) {
+      case 'rising':
+        return AppColors.success;
+      case 'declining':
+        return AppColors.error;
+      default:
+        return AppColors.warning;
+    }
+  }
+
+  IconData _trendIcon(String? trend) {
+    switch (trend) {
+      case 'rising':
+        return Icons.trending_up;
+      case 'declining':
+        return Icons.trending_down;
+      default:
+        return Icons.trending_flat;
+    }
+  }
+
+  Widget _row(String label, String value) {
     return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: 4),
         child:
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text(label,
               style: const TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary)),
+                  fontSize: 12, color: AppColors.textSecondary)),
           Text(value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))
         ]));
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  const _StatCard(
+      {required this.label,
+      required this.value,
+      required this.icon,
+      required this.color});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.2))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 10, color: color, fontWeight: FontWeight.w500))
+        ]),
+        const SizedBox(height: 3),
+        Text(value,
+            style: TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+      ]),
+    );
   }
 }
 
