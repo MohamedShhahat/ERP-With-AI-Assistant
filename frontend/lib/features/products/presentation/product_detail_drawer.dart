@@ -599,14 +599,22 @@ class _ProductDetailDrawerState extends ConsumerState<ProductDetailDrawer>
 
   void _transferStock(ProductModel p, List<StockInfo> stockData) {
     final qtyController = TextEditingController();
+    const warehouses = [1, 2, 3];
     int fromWarehouse = stockData.isNotEmpty ? stockData.first.warehouseId : 1;
-    int toWarehouse = 2;
+    int toWarehouse =
+        warehouses.firstWhere((id) => id != fromWarehouse, orElse: () => 1);
+
     showDialog(
         context: context,
         builder: (ctx) => StatefulBuilder(builder: (ctx, setDialogState) {
               final fromStock = stockData
                   .where((s) => s.warehouseId == fromWarehouse)
                   .fold<double>(0, (sum, s) => sum + s.quantity);
+              final availableTo =
+                  warehouses.where((id) => id != fromWarehouse).toList();
+              if (!availableTo.contains(toWarehouse)) {
+                toWarehouse = availableTo.first;
+              }
               return AlertDialog(
                 title: const Row(children: [
                   Icon(Icons.swap_horiz, color: AppColors.primary, size: 22),
@@ -618,29 +626,37 @@ class _ProductDetailDrawerState extends ConsumerState<ProductDetailDrawer>
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
-                      value: fromWarehouse,
-                      decoration: InputDecoration(
-                          labelText: 'From Warehouse',
-                          helperText:
-                              'Available: ${fromStock.toStringAsFixed(1)} ${p.baseUnit}'),
-                      items: [1, 2, 3]
-                          .map((id) => DropdownMenuItem(
-                              value: id, child: Text('Warehouse #$id')))
-                          .toList(),
-                      onChanged: (v) =>
-                          setDialogState(() => fromWarehouse = v ?? 1)),
+                    value: fromWarehouse,
+                    decoration: InputDecoration(
+                        labelText: 'From Warehouse',
+                        helperText:
+                            'Available: ${fromStock.toStringAsFixed(1)} ${p.baseUnit}'),
+                    items: warehouses
+                        .map((id) => DropdownMenuItem(
+                            value: id, child: Text('Warehouse #$id')))
+                        .toList(),
+                    onChanged: (v) => setDialogState(() {
+                      fromWarehouse = v ?? 1;
+                      if (toWarehouse == fromWarehouse) {
+                        toWarehouse = warehouses.firstWhere(
+                            (id) => id != fromWarehouse,
+                            orElse: () => 1);
+                      }
+                    }),
+                  ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
-                      value: toWarehouse,
-                      decoration:
-                          const InputDecoration(labelText: 'To Warehouse'),
-                      items: [1, 2, 3]
-                          .where((id) => id != fromWarehouse)
-                          .map((id) => DropdownMenuItem(
-                              value: id, child: Text('Warehouse #$id')))
-                          .toList(),
-                      onChanged: (v) =>
-                          setDialogState(() => toWarehouse = v ?? 2)),
+                    key: ValueKey('to_$fromWarehouse'),
+                    value: toWarehouse,
+                    decoration:
+                        const InputDecoration(labelText: 'To Warehouse'),
+                    items: availableTo
+                        .map((id) => DropdownMenuItem(
+                            value: id, child: Text('Warehouse #$id')))
+                        .toList(),
+                    onChanged: (v) => setDialogState(
+                        () => toWarehouse = v ?? availableTo.first),
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                       controller: qtyController,
