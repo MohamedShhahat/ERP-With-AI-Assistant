@@ -2,6 +2,11 @@ from celery import Celery
 from celery.schedules import crontab
 from app.config import settings
 
+import app.tasks.inventory
+import app.tasks.notifications
+import app.tasks.reports
+import app.tasks.accounting
+
 celery_app = Celery(
     "ceramic_erp",
     broker=settings.celery_broker_url,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/dashboard/presentation/dashboard_provider.dart';
-import '../../features/sales/presentation/sales_provider.dart' show salesProvider, productsListProvider;
+import '../../features/sales/presentation/sales_provider.dart'
+    show salesProvider, productsListProvider;
 import '../../features/expenses/presentation/expenses_provider.dart';
 import '../../features/products/presentation/products_provider.dart';
 import '../../features/purchases/presentation/purchases_provider.dart';
@@ -38,6 +39,8 @@ void invalidateAfterExpense(WidgetRef ref) {
 
 void invalidateAfterPurchase(WidgetRef ref) {
   ref.invalidate(purchasesProvider);
+  ref.invalidate(productsProvider);
+  ref.invalidate(productsListProvider);
   invalidateDashboard(ref);
   ref.invalidate(inventoryDataProvider);
   ref.invalidate(reportsCashFlowProvider);
