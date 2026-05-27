@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/validation_error_banner.dart';
 import '../../customers/data/customers_repository.dart';
 import '../../products/data/products_repository.dart';
 import '../data/sales_repository.dart';
@@ -26,10 +27,15 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
   final _paidController = TextEditingController();
   final _notesController = TextEditingController();
   bool _submitting = false;
+  String? _errorMessage;
 
   double get _subtotal => _items.fold(0, (sum, item) => sum + item.lineTotal);
   double get _discountTotal => double.tryParse(_discountController.text) ?? 0;
   double get _total => _subtotal - _discountTotal;
+
+  void _clearError() {
+    if (_errorMessage != null) setState(() => _errorMessage = null);
+  }
 
   @override
   void dispose() {
@@ -54,7 +60,12 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
             _buildHeader(),
             const SizedBox(height: 8),
             _buildStepIndicator(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            ValidationErrorBanner(
+              message: _errorMessage,
+              onDismiss: _clearError,
+            ),
+            const SizedBox(height: 8),
             Flexible(child: _buildCurrentStep()),
             const SizedBox(height: 16),
             _buildBottomActions(),
@@ -69,9 +80,12 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
       children: [
         const Icon(Icons.point_of_sale, color: AppColors.primary),
         const SizedBox(width: 8),
-        const Text('Create New Sale', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Create New Sale',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const Spacer(),
-        IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+        IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close)),
       ],
     );
   }
@@ -90,17 +104,36 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
                 height: 24,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDone ? AppColors.success : isActive ? AppColors.primary : Colors.grey.withOpacity(0.3),
+                  color: isDone
+                      ? AppColors.success
+                      : isActive
+                          ? AppColors.primary
+                          : Colors.grey.withOpacity(0.3),
                 ),
                 child: Center(
                   child: isDone
                       ? const Icon(Icons.check, size: 14, color: Colors.white)
-                      : Text('${i + 1}', style: TextStyle(fontSize: 12, color: isActive ? Colors.white : null, fontWeight: FontWeight.w600)),
+                      : Text('${i + 1}',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: isActive ? Colors.white : null,
+                              fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 4),
-              Text(steps[i], style: TextStyle(fontSize: 12, fontWeight: isActive ? FontWeight.w600 : FontWeight.w400, color: isActive ? AppColors.primary : null)),
-              if (i < steps.length - 1) Expanded(child: Container(height: 1, margin: const EdgeInsets.symmetric(horizontal: 6), color: isDone ? AppColors.success : Colors.grey.withOpacity(0.3))),
+              Text(steps[i],
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                      color: isActive ? AppColors.primary : null)),
+              if (i < steps.length - 1)
+                Expanded(
+                    child: Container(
+                        height: 1,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        color: isDone
+                            ? AppColors.success
+                            : Colors.grey.withOpacity(0.3))),
             ],
           ),
         );
@@ -110,11 +143,16 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
 
   Widget _buildCurrentStep() {
     switch (_step) {
-      case 0: return _buildCustomerStep();
-      case 1: return _buildProductsStep();
-      case 2: return _buildPaymentStep();
-      case 3: return _buildConfirmStep();
-      default: return const SizedBox.shrink();
+      case 0:
+        return _buildCustomerStep();
+      case 1:
+        return _buildProductsStep();
+      case 2:
+        return _buildPaymentStep();
+      case 3:
+        return _buildConfirmStep();
+      default:
+        return const SizedBox.shrink();
     }
   }
 
@@ -124,13 +162,20 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Select Customer', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          const Text('Select Customer',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           CheckboxListTile(
             title: const Text('Walk-in Customer'),
             subtitle: const Text('No specific customer account'),
             value: _isWalkIn,
-            onChanged: (v) => setState(() { _isWalkIn = v ?? false; if (_isWalkIn) _selectedCustomerId = null; }),
+            onChanged: (v) {
+              setState(() {
+                _isWalkIn = v ?? false;
+                if (_isWalkIn) _selectedCustomerId = null;
+              });
+              _clearError();
+            },
             controlAffinity: ListTileControlAffinity.leading,
           ),
           if (!_isWalkIn) ...[
@@ -140,19 +185,30 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
               error: (e, _) => Text('Error: $e'),
               data: (customers) => DropdownButtonFormField<int>(
                 value: _selectedCustomerId,
-                decoration: const InputDecoration(labelText: 'Customer', hintText: 'Select a customer'),
-                items: customers.map((c) => DropdownMenuItem(value: c.customerId, child: Text(c.customerName))).toList(),
-                onChanged: (v) => setState(() => _selectedCustomerId = v),
+                decoration: const InputDecoration(
+                    labelText: 'Customer', hintText: 'Select a customer'),
+                items: customers
+                    .map((c) => DropdownMenuItem(
+                        value: c.customerId, child: Text(c.customerName)))
+                    .toList(),
+                onChanged: (v) {
+                  setState(() => _selectedCustomerId = v);
+                  _clearError();
+                },
               ),
             ),
           ],
           const SizedBox(height: 20),
-          const Text('Warehouse', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          const Text('Warehouse',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
             value: _warehouseId,
             decoration: const InputDecoration(labelText: 'Warehouse'),
-            items: List.generate(3, (i) => DropdownMenuItem(value: i + 1, child: Text('Warehouse ${i + 1}'))),
+            items: List.generate(
+                3,
+                (i) => DropdownMenuItem(
+                    value: i + 1, child: Text('Warehouse ${i + 1}'))),
             onChanged: (v) => setState(() => _warehouseId = v ?? 1),
           ),
         ],
@@ -167,7 +223,8 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
       children: [
         Row(
           children: [
-            const Text('Invoice Items', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            const Text('Invoice Items',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             const Spacer(),
             TextButton.icon(
               onPressed: () => _addItem(productsAsync),
@@ -179,7 +236,9 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
         const SizedBox(height: 12),
         Expanded(
           child: _items.isEmpty
-              ? const Center(child: Text('No items added yet. Click "Add Item" to begin.', style: TextStyle(color: AppColors.textSecondary)))
+              ? const Center(
+                  child: Text('No items added yet. Click "Add Item" to begin.',
+                      style: TextStyle(color: AppColors.textSecondary)))
               : ListView.builder(
                   itemCount: _items.length,
                   itemBuilder: (_, i) {
@@ -194,16 +253,32 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item.productName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                  Text('${item.quantity} ${item.unitType} x ${item.unitPrice.toStringAsFixed(2)} EGP', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                                  if (item.discount > 0) Text('Discount: ${item.discount.toStringAsFixed(2)} EGP', style: const TextStyle(fontSize: 12, color: AppColors.warning)),
+                                  Text(item.productName,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13)),
+                                  Text(
+                                      '${item.quantity} ${item.unitType} x ${item.unitPrice.toStringAsFixed(2)} EGP',
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textSecondary)),
+                                  if (item.discount > 0)
+                                    Text(
+                                        'Discount: ${item.discount.toStringAsFixed(2)} EGP',
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.warning)),
                                 ],
                               ),
                             ),
-                            Text('${item.lineTotal.toStringAsFixed(2)} EGP', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                            Text('${item.lineTotal.toStringAsFixed(2)} EGP',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700, fontSize: 14)),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                              onPressed: () => setState(() => _items.removeAt(i)),
+                              icon: const Icon(Icons.delete_outline,
+                                  size: 18, color: AppColors.error),
+                              onPressed: () =>
+                                  setState(() => _items.removeAt(i)),
                             ),
                           ],
                         ),
@@ -216,7 +291,9 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text('Subtotal: ${_subtotal.toStringAsFixed(2)} EGP', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            Text('Subtotal: ${_subtotal.toStringAsFixed(2)} EGP',
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
           ],
         ),
       ],
@@ -228,7 +305,8 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Payment Details', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          const Text('Payment Details',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(14),
@@ -240,9 +318,11 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
               children: [
                 _summaryRow('Subtotal', '${_subtotal.toStringAsFixed(2)} EGP'),
                 const SizedBox(height: 6),
-                _summaryRow('Discount', '${_discountTotal.toStringAsFixed(2)} EGP'),
+                _summaryRow(
+                    'Discount', '${_discountTotal.toStringAsFixed(2)} EGP'),
                 const Divider(),
-                _summaryRow('Total', '${_total.toStringAsFixed(2)} EGP', bold: true),
+                _summaryRow('Total', '${_total.toStringAsFixed(2)} EGP',
+                    bold: true),
               ],
             ),
           ),
@@ -250,22 +330,32 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
           TextField(
             controller: _discountController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Discount Amount', prefixText: 'EGP '),
+            decoration: const InputDecoration(
+                labelText: 'Discount Amount', prefixText: 'EGP '),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
-          const Text('Invoice Type', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          const Text('Invoice Type',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           SegmentedButton<String>(
             segments: const [
-              ButtonSegment(value: 'cash', label: Text('Cash'), icon: Icon(Icons.money)),
-              ButtonSegment(value: 'credit', label: Text('Credit'), icon: Icon(Icons.credit_card)),
-              ButtonSegment(value: 'mixed', label: Text('Mixed'), icon: Icon(Icons.swap_horiz)),
+              ButtonSegment(
+                  value: 'cash', label: Text('Cash'), icon: Icon(Icons.money)),
+              ButtonSegment(
+                  value: 'credit',
+                  label: Text('Credit'),
+                  icon: Icon(Icons.credit_card)),
+              ButtonSegment(
+                  value: 'mixed',
+                  label: Text('Mixed'),
+                  icon: Icon(Icons.swap_horiz)),
             ],
             selected: {_invoiceType},
             onSelectionChanged: (v) => setState(() {
               _invoiceType = v.first;
-              if (_invoiceType == 'cash') _paidController.text = _total.toStringAsFixed(2);
+              if (_invoiceType == 'cash')
+                _paidController.text = _total.toStringAsFixed(2);
             }),
           ),
           const SizedBox(height: 16),
@@ -273,7 +363,10 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
             TextField(
               controller: _paidController,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Paid Amount', prefixText: 'EGP ', hintText: _total.toStringAsFixed(2)),
+              decoration: InputDecoration(
+                  labelText: 'Paid Amount',
+                  prefixText: 'EGP ',
+                  hintText: _total.toStringAsFixed(2)),
             ),
           const SizedBox(height: 16),
           TextField(
@@ -287,14 +380,20 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
   }
 
   Widget _buildConfirmStep() {
-    final paidAmount = double.tryParse(_paidController.text) ?? (_invoiceType == 'cash' ? _total : 0);
+    final paidAmount = double.tryParse(_paidController.text) ??
+        (_invoiceType == 'cash' ? _total : 0);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Review & Confirm', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          const Text('Review & Confirm',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
-          _confirmRow('Customer', _isWalkIn ? 'Walk-in Customer' : 'Customer #${_selectedCustomerId ?? "N/A"}'),
+          _confirmRow(
+              'Customer',
+              _isWalkIn
+                  ? 'Walk-in Customer'
+                  : 'Customer #${_selectedCustomerId ?? "N/A"}'),
           _confirmRow('Warehouse', 'Warehouse $_warehouseId'),
           _confirmRow('Items', '${_items.length} products'),
           _confirmRow('Subtotal', '${_subtotal.toStringAsFixed(2)} EGP'),
@@ -302,8 +401,10 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
           _confirmRow('Total', '${_total.toStringAsFixed(2)} EGP'),
           _confirmRow('Payment Type', _invoiceType.toUpperCase()),
           _confirmRow('Paid Amount', '${paidAmount.toStringAsFixed(2)} EGP'),
-          _confirmRow('Remaining', '${(_total - paidAmount).clamp(0, double.infinity).toStringAsFixed(2)} EGP'),
-          if (_notesController.text.isNotEmpty) _confirmRow('Notes', _notesController.text),
+          _confirmRow('Remaining',
+              '${(_total - paidAmount).clamp(0, double.infinity).toStringAsFixed(2)} EGP'),
+          if (_notesController.text.isNotEmpty)
+            _confirmRow('Notes', _notesController.text),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
@@ -316,7 +417,10 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
               children: [
                 Icon(Icons.info_outline, size: 16, color: AppColors.info),
                 SizedBox(width: 8),
-                Expanded(child: Text('Creating this invoice will automatically deduct stock and create ledger entries.', style: TextStyle(fontSize: 12, color: AppColors.info))),
+                Expanded(
+                    child: Text(
+                        'Creating this invoice will automatically deduct stock and create ledger entries.',
+                        style: TextStyle(fontSize: 12, color: AppColors.info))),
               ],
             ),
           ),
@@ -330,12 +434,16 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         if (_step > 0)
-          TextButton(onPressed: () => setState(() => _step--), child: const Text('Back'))
+          TextButton(
+              onPressed: () => setState(() => _step--),
+              child: const Text('Back'))
         else
           const SizedBox.shrink(),
         Row(
           children: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel')),
             const SizedBox(width: 8),
             if (_step < 3)
               ElevatedButton(
@@ -345,7 +453,13 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
             else
               ElevatedButton(
                 onPressed: _submitting ? null : _submit,
-                child: _submitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Create Invoice'),
+                child: _submitting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Text('Create Invoice'),
               ),
           ],
         ),
@@ -355,10 +469,14 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
 
   bool _canProceed() {
     switch (_step) {
-      case 0: return _isWalkIn || _selectedCustomerId != null;
-      case 1: return _items.isNotEmpty;
-      case 2: return true;
-      default: return true;
+      case 0:
+        return _isWalkIn || _selectedCustomerId != null;
+      case 1:
+        return _items.isNotEmpty;
+      case 2:
+        return true;
+      default:
+        return true;
     }
   }
 
@@ -381,7 +499,10 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
                 children: [
                   DropdownButtonFormField<ProductModel>(
                     decoration: const InputDecoration(labelText: 'Product'),
-                    items: products.map((p) => DropdownMenuItem(value: p, child: Text(p.productName))).toList(),
+                    items: products
+                        .map((p) => DropdownMenuItem(
+                            value: p, child: Text(p.productName)))
+                        .toList(),
                     onChanged: (p) {
                       setDialogState(() {
                         selected = p;
@@ -391,27 +512,42 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  TextField(controller: qtyController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Quantity')),
+                  TextField(
+                      controller: qtyController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Quantity')),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: unitType,
                     decoration: const InputDecoration(labelText: 'Unit Type'),
                     items: const [
-                      DropdownMenuItem(value: 'meter', child: Text('Meter (m²)')),
+                      DropdownMenuItem(
+                          value: 'meter', child: Text('Meter (m²)')),
                       DropdownMenuItem(value: 'piece', child: Text('Piece')),
                       DropdownMenuItem(value: 'carton', child: Text('Carton')),
                     ],
-                    onChanged: (v) => setDialogState(() => unitType = v ?? 'meter'),
+                    onChanged: (v) =>
+                        setDialogState(() => unitType = v ?? 'meter'),
                   ),
                   const SizedBox(height: 12),
-                  TextField(controller: priceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Unit Price', prefixText: 'EGP ')),
+                  TextField(
+                      controller: priceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Unit Price', prefixText: 'EGP ')),
                   const SizedBox(height: 12),
-                  TextField(controller: discountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Discount', prefixText: 'EGP ')),
+                  TextField(
+                      controller: discountController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                          labelText: 'Discount', prefixText: 'EGP ')),
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel')),
               ElevatedButton(
                 onPressed: () {
                   if (selected == null) return;
@@ -443,9 +579,12 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
 
   Future<void> _submit() async {
     setState(() => _submitting = true);
+    _clearError();
     try {
-      final paidAmount = double.tryParse(_paidController.text) ?? (_invoiceType == 'cash' ? _total : 0);
-      final invoiceNumber = 'INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+      final paidAmount = double.tryParse(_paidController.text) ??
+          (_invoiceType == 'cash' ? _total : 0);
+      final invoiceNumber =
+          'INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
       final repo = ref.read(salesRepositoryProvider);
       await repo.create({
         'customer_id': _isWalkIn ? null : _selectedCustomerId,
@@ -455,24 +594,29 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
         'discount_amount': _discountTotal,
         'paid_amount': paidAmount,
         'notes': _notesController.text.isEmpty ? null : _notesController.text,
-        'items': _items.map((item) => {
-          'product_id': item.productId,
-          'sold_quantity': item.quantity,
-          'unit_type': item.unitType,
-          'unit_price': item.unitPrice,
-          'cost_at_sale': item.costAtSale,
-          'discount': item.discount,
-          'total_price': item.lineTotal,
-        }).toList(),
+        'items': _items
+            .map((item) => {
+                  'product_id': item.productId,
+                  'sold_quantity': item.quantity,
+                  'unit_type': item.unitType,
+                  'unit_price': item.unitPrice,
+                  'cost_at_sale': item.costAtSale,
+                  'discount': item.discount,
+                  'total_price': item.lineTotal,
+                })
+            .toList(),
       });
       widget.onCreated();
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invoice $invoiceNumber created successfully')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Invoice $invoiceNumber created successfully')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error creating invoice: $e')));
+        setState(() {
+          _errorMessage = 'Error creating invoice: $e';
+        });
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -483,8 +627,14 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w400)),
-        Text(value, style: TextStyle(fontSize: 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
+        Text(label,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w400)),
+        Text(value,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
       ],
     );
   }
@@ -495,8 +645,15 @@ class _CreateSaleDialogState extends ConsumerState<CreateSaleDialog> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+          SizedBox(
+              width: 120,
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 13, color: AppColors.textSecondary))),
+          Expanded(
+              child: Text(value,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500))),
         ],
       ),
     );
