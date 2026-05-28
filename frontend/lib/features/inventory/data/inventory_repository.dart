@@ -29,8 +29,10 @@ class InventoryItem {
     required this.warehouseStocks,
   });
 
-  double get totalStock => warehouseStocks.fold(0, (sum, w) => sum + w.quantity);
-  double get totalValue => warehouseStocks.fold(0, (sum, w) => sum + (w.quantity * w.avgCost));
+  double get totalStock =>
+      warehouseStocks.fold(0, (sum, w) => sum + w.quantity);
+  double get totalValue =>
+      warehouseStocks.fold(0, (sum, w) => sum + (w.quantity * w.avgCost));
 
   StockStatus get status {
     if (totalStock <= 0) return StockStatus.outOfStock;
@@ -45,12 +47,16 @@ class WarehouseStock {
   final double quantity;
   final double avgCost;
 
-  WarehouseStock({required this.warehouseId, required this.quantity, required this.avgCost});
+  WarehouseStock(
+      {required this.warehouseId,
+      required this.quantity,
+      required this.avgCost});
 
   factory WarehouseStock.fromJson(Map<String, dynamic> json) {
     return WarehouseStock(
       warehouseId: json['warehouse_id'],
-      quantity: double.tryParse(json['cached_quantity']?.toString() ?? '0') ?? 0,
+      quantity:
+          double.tryParse(json['cached_quantity']?.toString() ?? '0') ?? 0,
       avgCost: double.tryParse(json['cached_avg_cost']?.toString() ?? '0') ?? 0,
     );
   }
@@ -61,7 +67,8 @@ class WarehouseModel {
   final String warehouseName;
   final String? location;
 
-  WarehouseModel({required this.warehouseId, required this.warehouseName, this.location});
+  WarehouseModel(
+      {required this.warehouseId, required this.warehouseName, this.location});
 }
 
 enum StockStatus { normal, low, outOfStock, overstock }
@@ -73,7 +80,8 @@ class InventoryRepository {
   Future<List<Map<String, dynamic>>> getAllStock({int? warehouseId}) async {
     final params = <String, dynamic>{};
     if (warehouseId != null) params['warehouse_id'] = warehouseId;
-    final response = await _dio.get('/inventory/stock', queryParameters: params);
+    final response =
+        await _dio.get('/inventory/stock', queryParameters: params);
     return (response.data as List).cast<Map<String, dynamic>>();
   }
 
@@ -83,7 +91,8 @@ class InventoryRepository {
   }
 
   Future<List<Map<String, dynamic>>> getAllProducts() async {
-    final response = await _dio.get('/products', queryParameters: {'active_only': false});
+    final response =
+        await _dio.get('/products', queryParameters: {'active_only': false});
     return (response.data as List).cast<Map<String, dynamic>>();
   }
 
@@ -131,8 +140,33 @@ class InventoryRepository {
     return response.data as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> getLowStockPrediction({int daysAhead = 7}) async {
-    final response = await _dio.get('/ai/predict/low-stock', queryParameters: {'days_ahead': daysAhead});
+  Future<Map<String, dynamic>> adjustStock({
+    required int productId,
+    required int warehouseId,
+    required double quantity,
+    required String direction,
+    required String unitType,
+    double costPerUnit = 0,
+    String? reason,
+  }) async {
+    final txType = direction == 'in' ? 'purchase' : 'waste';
+    final response = await _dio.post('/inventory/transactions', data: {
+      'product_id': productId,
+      'warehouse_id': warehouseId,
+      'transaction_type': txType,
+      'direction': direction,
+      'quantity': quantity,
+      'unit_type': unitType,
+      'cost_per_unit': costPerUnit,
+      'notes': reason,
+    });
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getLowStockPrediction(
+      {int daysAhead = 7}) async {
+    final response = await _dio.get('/ai/predict/low-stock',
+        queryParameters: {'days_ahead': daysAhead});
     return response.data as Map<String, dynamic>;
   }
 
@@ -142,6 +176,22 @@ class InventoryRepository {
       'message': message,
     });
     return response.data as Map<String, dynamic>;
+  }
+
+  Future<List<Map<String, dynamic>>> getNotifications(
+      {bool unreadOnly = false}) async {
+    final response = await _dio
+        .get('/notifications', queryParameters: {'unread_only': unreadOnly});
+    return (response.data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<String> getStockHistory(int productId, String productName) async {
+    final response = await _dio.post('/ai/chat', data: {
+      'session_id': 'inventory_history_$productId',
+      'message':
+          'Show me the recent stock movement history for product "$productName" (product ID: $productId). Include dates, quantities, and types.',
+    });
+    return response.data['response']?.toString() ?? 'No history available';
   }
 
   Future<void> refreshCache() async {
