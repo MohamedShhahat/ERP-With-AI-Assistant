@@ -35,9 +35,7 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
 
   Future<void> _refreshStock() async {
     try {
-      final repo = ref.read(inventoryRepositoryProvider);
-      await repo.refreshCache();
-      invalidateAfterInventoryChange(ref);
+      await refreshInventory(ref);
       if (mounted)
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Stock refreshed')));
@@ -88,7 +86,7 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
       builder: (_) => const OpeningStockDialog(),
     );
     if (result == true) {
-      invalidateAfterInventoryChange(ref);
+      await refreshInventory(ref);
     }
   }
 
@@ -740,7 +738,7 @@ class _TransferDialogState extends State<_TransferDialog> {
                       quantity: double.parse(_qtyController.text),
                       unitType: widget.item.baseUnit,
                     );
-                    invalidateAfterInventoryChange(widget.ref);
+                    await refreshInventory(widget.ref);
                     if (mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -860,7 +858,7 @@ class _AdjustStockDialogState extends State<_AdjustStockDialog> {
                           ? null
                           : _reasonController.text,
                     );
-                    invalidateAfterInventoryChange(widget.ref);
+                    await refreshInventory(widget.ref);
                     if (mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -981,7 +979,7 @@ class _AddStockDialogState extends State<_AddStockDialog> {
                           ? null
                           : _notesController.text,
                     );
-                    invalidateAfterInventoryChange(widget.ref);
+                    await refreshInventory(widget.ref);
                     if (mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -1115,7 +1113,7 @@ class _DeductStockDialogState extends State<_DeductStockDialog> {
                       unitType: widget.item.baseUnit,
                       reason: _reasonController.text,
                     );
-                    invalidateAfterInventoryChange(widget.ref);
+                    await refreshInventory(widget.ref);
                     if (mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -1199,7 +1197,7 @@ class _StockHistoryDialogState extends State<_StockHistoryDialog> {
         return Icons.inventory_2;
       case 'waste':
         return Icons.delete_outline;
-      case 'transfer':
+      case 'warehouse_transfer':
         return Icons.swap_horiz;
       case 'sales_return':
         return Icons.assignment_return;
